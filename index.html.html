@@ -192,16 +192,62 @@
         .tool-btn:hover:not(.active) { background: #E5E7EB; }
 
         .canvas-wrapper {
-    position: relative;
-    box-shadow: var(--shadow-md);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 4px solid var(--c-text-main); /* Frame effect */
-    margin: 20px auto;
-    background: white;
-    max-width: 600px;
-    width: 100%;
+            position: relative;
+            box-shadow: var(--shadow-md);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 4px solid var(--c-text-main); /* Frame effect */
+            margin: 20px auto;
+            background: white;
+            max-width: 600px;
+            width: 100%;
         }
+        /* --- TOURNAMENT STYLES --- */
+        .tournament-tab {
+            background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+            color: white !important;
+            font-weight: 700;
+        }
+        
+        .tournament-tab:hover {
+            background: linear-gradient(135deg, #B45309 0%, #D97706 100%);
+        }
+        
+        .tournament-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .tournament-welcome {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .tournament-welcome h1 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            color: var(--c-primary);
+        }
+        
+        .tournament-btn {
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--c-primary);
+            color: white;
+        }
+        
+        .tournament-btn:hover {
+            background: var(--c-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
 
         /* --- GALLERY GRID --- */
         .gallery-grid {
@@ -308,7 +354,6 @@
             .nav-tab { white-space: nowrap; }
         }
     </style>
-    <!-- SUPABASE SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -327,61 +372,62 @@
     </header>
 
     <nav class="nav-container">
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="activateTab('draw')">Draw</button>
-            <button class="nav-tab" onclick="activateTab('gallery')">Gallery</button>
-            <button class="nav-tab" onclick="activateTab('leaderboard')">Leaderboard</button>
-            <button class="nav-tab" onclick="activateTab('accuracy')">Smart Score</button>
-        </div>
-    </nav>
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="activateTab('draw')">Draw</button>
+        <button class="nav-tab" onclick="activateTab('gallery')">Gallery</button>
+        <button class="nav-tab" onclick="activateTab('leaderboard')">Leaderboard</button>
+        <button class="nav-tab" onclick="activateTab('accuracy')">Accuracy</button>
+        <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">🏆 Tournament</button>
+    </div>
+</nav>
+
 
     <div class="container">
         
         <div id="draw" class="tab-content active">
             <div class="input-group">
-    <label class="input-label">1. Give Your Drawing a Title</label>
-    <input type="text" id="dogTitle" class="form-control" placeholder="Your Dog Title" maxlength="50">
-</div>
+                <label class="input-label">1. Give Your Drawing a Title</label>
+                <input type="text" id="dogTitle" class="form-control" placeholder="Your Dog Title" maxlength="50">
+            </div>
 
-<div class="input-group">
-    <label class="input-label">Choose a Reference (Optional)</label>
-    <select id="refSelect" class="form-control">
-        <option value="">Select a dog photo...</option>
-    </select>
-</div>
+            <div class="input-group">
+                <label class="input-label">Choose a Reference (Optional)</label>
+                <select id="refSelect" class="form-control">
+                    <option value="">Select a dog photo...</option>
+                </select>
+            </div>
 
-                <div class="toolbar">
-                    <button class="tool-btn active" id="btnPen" title="Pen">🖊️</button>
-                    <button class="tool-btn" id="btnBrush" title="Brush">🖌️</button>
-                    <button class="tool-btn" id="btnEraser" title="Eraser">🧹</button>
-                    <button class="tool-btn" id="btnFill" title="Fill">🪣</button>
-                    <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
-                    <input type="color" id="colorPicker" value="#000000" style="height: 44px; width: 44px; padding: 0; border: none; cursor: pointer;">
-                    <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
-                    <button class="tool-btn" id="btnUndo" title="Undo">↶</button>
-                    <button class="tool-btn" id="btnClear" title="Clear">🗑️</button>
-                </div>
+            <div class="toolbar">
+                <button class="tool-btn active" id="btnPen" title="Pen">🖊️</button>
+                <button class="tool-btn" id="btnBrush" title="Brush">🖌️</button>
+                <button class="tool-btn" id="btnEraser" title="Eraser">🧹</button>
+                <button class="tool-btn" id="btnFill" title="Fill">🪣</button>
+                <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
+                <input type="color" id="colorPicker" value="#000000" style="height: 44px; width: 44px; padding: 0; border: none; cursor: pointer;">
+                <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
+                <button class="tool-btn" id="btnUndo" title="Undo">↶</button>
+                <button class="tool-btn" id="btnClear" title="Clear">🗑️</button>
+            </div>
 
-                <div class="canvas-wrapper">
-                    <canvas id="refCanvas" width="600" height="450" style="position: absolute; pointer-events: none; opacity: 0;"></canvas>
-                    <canvas id="overlayCanvas" width="600" height="450" style="position: absolute; pointer-events: none; top:0; left:0;"></canvas>
-                    <canvas id="drawCanvas" width="600" height="450"></canvas>
-                </div>
+            <div class="canvas-wrapper">
+                <canvas id="refCanvas" width="600" height="450" style="position: absolute; pointer-events: none; opacity: 0;"></canvas>
+                <canvas id="overlayCanvas" width="600" height="450" style="position: absolute; pointer-events: none; top:0; left:0;"></canvas>
+                <canvas id="drawCanvas" width="600" height="450"></canvas>
+            </div>
 
-                <div class="input-group" style="display: flex; gap: 10px; align-items: flex-end; margin-top: 20px;">
-                    <div style="flex: 1;">
-                        <label class="input-label">2. Sign your Masterpiece</label>
-                        <input type="text" id="artistName" class="form-control" placeholder="Your Artist Name" maxlength="30">
-                    </div>
-                    <button class="btn-cta" id="btnSubmit" style="padding: 10px 24px; font-size: 1rem;">Publish</button>
+            <div class="input-group" style="display: flex; gap: 10px; align-items: flex-end; margin-top: 20px;">
+                <div style="flex: 1;">
+                    <label class="input-label">2. Sign your Masterpiece</label>
+                    <input type="text" id="artistName" class="form-control" placeholder="Your Artist Name" maxlength="30">
                 </div>
-                
-                <div style="margin-top: 10px;">
-                     <label style="font-size: 0.9rem; color: var(--c-text-muted);">
-                        <input type="checkbox" id="toggleRef" disabled> Show Reference Overlay
-                    </label>
-                    <input type="range" id="opacitySlider" min="0" max="100" value="30" disabled style="vertical-align: middle;">
-                </div>
+                <button class="btn-cta" id="btnSubmit" style="padding: 10px 24px; font-size: 1rem;">Publish</button>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                    <label style="font-size: 0.9rem; color: var(--c-text-muted);">
+                    <input type="checkbox" id="toggleRef" disabled> Show Reference Overlay
+                </label>
+                <input type="range" id="opacitySlider" min="0" max="100" value="30" disabled style="vertical-align: middle;">
             </div>
         </div>
 
@@ -390,15 +436,13 @@
                 <h2>Latest Submissions</h2>
                 <span style="font-size: 0.9rem; color: var(--c-text-muted);">Sorted by Popularity</span>
             </div>
-            <div id="galleryGrid" class="gallery-grid">
-                </div>
+            <div id="galleryGrid" class="gallery-grid"></div>
         </div>
 
         <div id="leaderboard" class="tab-content">
             <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
                 <h2 style="text-align: center; margin-bottom: 20px;">🏆 Hall of Fame</h2>
-                <div id="leaderboardList">
-                    </div>
+                <div id="leaderboardList"></div>
             </div>
         </div>
 
@@ -408,27 +452,325 @@
                 <p style="text-align: center; color: var(--c-text-muted); margin-bottom: 30px;">
                     Our algorithm analyzes color matching and shape composition.
                 </p>
-                <div id="accuracyList">
-                    </div>
+                <div id="accuracyList"></div>
             </div>
         </div>
 
+        <div class="tab-content" id="tournament">
+            <div class="tournament-container">
+                <div id="tournamentWelcome" class="tournament-welcome">
+                    <h1>🏆 Tournament Mode</h1>
+                    <p style="font-size: 1.1rem; color: var(--c-text-muted); margin-bottom: 32px;">
+                        Competitive drawing competition against other players!
+                    </p>
+                    <button class="tournament-btn" onclick="startTournamentLobby()">
+                        ⚡ Create & Join Tournament
+                    </button>
+
+                    <div style="margin-top: 24px;">
+                        <p style="margin-bottom: 8px; color: var(--c-text-muted); font-size: 0.95rem;">
+                            Already have a lobby code?
+                        </p>
+                        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                            <input id="joinLobbyCodeInput"
+                                placeholder="Enter lobby code"
+                                style="padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; min-width: 180px; text-transform: uppercase;">
+                            <button class="tournament-btn" style="padding: 10px 18px; font-size: 0.95rem;"
+                                    onclick="joinExistingLobby()">
+                                🔑 Join with code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 32px; padding: 20px; background: var(--c-surface-alt); border-radius: var(--radius-md);">
+                        <h3>📋 How it works:</h3>
+
+                        <ul style="text-align: left; max-width: 500px; margin: 16px auto; line-height: 1.8;">
+                            <li>🎯 2–4 players per tournament</li>
+                            <li>⏱️ Lobby starts in 3 minutes (or with 4 players)</li>
+                            <li>🎨 3 minutes per round to draw</li>
+                            <li>🏅 With 3 players: top 2 go to the finals</li>
+                            <li>🏆 Winner enters the Hall of Fame</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="tournamentLobby" style="display:none;">
+                    </div>
+                
+                <div id="tournamentDrawing" style="display:none;">
+                    </div>
+                
+                <div id="tournamentResults" style="display:none;">
+                    </div>
+                <div id="tournamentHallOfFame" style="margin-top: 32px; display:none;">
+                    <h3>🏆 Tournament Hall of Fame</h3>
+                    <div id="tournamentHallOfFameList"></div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <div id="toast" class="toast"></div>
 
     <script>
+        // Initialiseer client global
+        const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz";
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- TOURNAMENT LOBBY SYSTEM ---
+        const LOBBY = {
+            state: {
+                tournamentId: null,
+                playerId: null,
+                playerName: '',
+                checkInterval: null
+            },
+            
+            // Genereer 6-letter code
+            generateCode() {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return code;
+            },
+            
+            // Start nieuw tournament
+            async createNewLobby() {
+                try {
+                    const lobbyCode = this.generateCode();
+                    const randomDog = Math.floor(Math.random() * CONFIG.dogs.length);
+                    
+                    console.log('Creating lobby:', lobbyCode);
+                    
+                    const { data: tournament, error } = await client
+                        .from('tournaments')
+                        .insert([{
+                            lobby_code: lobbyCode,
+                            reference_dog_id: randomDog,
+                            max_players: 4,
+                            draw_time_seconds: 180,
+                            status: 'waiting'
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    this.state.tournamentId = tournament.id;
+                    console.log('Lobby created:', tournament.id);
+                    
+                    return tournament;
+                } catch (err) {
+                    console.error('Error creating lobby:', err);
+                    showToast('Error creating lobby', 'error');
+                    return null;
+                }
+            },
+            
+            // Join tournament door speler toe te voegen
+            async addPlayerToLobby(tournament, playerName) {
+                try {
+                    // Haal huidige spelers op
+                    const { data: existingPlayers } = await client
+                        .from('tournament_players')
+                        .select('player_slot')
+                        .eq('tournament_id', tournament.id);
+
+                    // Bepaal volgende slot (0, 1, 2, 3)
+                    let slot = 0;
+                    if (existingPlayers && existingPlayers.length > 0) {
+                        const usedSlots = existingPlayers.map(p => p.player_slot);
+                        while (usedSlots.includes(slot)) {
+                            slot++;
+                        }
+                    }
+
+                    // Voeg speler toe, inclusief naam
+                    const { data: player, error } = await client
+                        .from('tournament_players')
+                        .insert([{
+                            tournament_id: tournament.id,
+                            player_slot: slot,
+                            is_eliminated: false,
+                            current_round: 1,
+                            player_name: playerName
+                        }])
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    this.state.playerId = player.id;
+                    this.state.playerName = playerName;
+                    console.log('Player added:', player.id);
+
+                    return player;
+                } catch (err) {
+                    console.error('Error adding player:', err);
+                    showToast('Error joining lobby', 'error');
+                    return null;
+                }
+            },
+
+            // Haal alle spelers in lobby op
+            async getPlayersInLobby(tournamentId) {
+                try {
+                    const { data: players, error } = await client
+                        .from('tournament_players')
+                        .select('*')
+                        .eq('tournament_id', tournamentId)
+                        .order('player_slot');
+                    
+                    if (error) throw error;
+                    return players || [];
+                } catch (err) {
+                    console.error('Error fetching players:', err);
+                    return [];
+                }
+            },
+
+            // Render the lobby waiting screen
+            showLobbyUI(tournament, players) {
+                const welcome = document.getElementById('tournamentWelcome');
+                const lobby = document.getElementById('tournamentLobby');
+
+                if (!welcome || !lobby) return;
+
+                welcome.style.display = 'none';
+                lobby.style.display = 'block';
+
+                lobby.innerHTML = `
+                    <div class="lobby-waiting">
+                        <h1>🎮 Waiting Lobby</h1>
+                        <div class="lobby-code-display">
+                            <p style="margin: 0 0 8px 0; color: var(--c-text-muted);">Lobby Code:</p>
+                            <div class="code-big" style="font-size: 3rem; font-weight:800; letter-spacing: 5px; color: var(--c-primary);">${tournament.lobby_code}</div>
+                            <p style="margin: 16px 0 0 0; font-size: 0.9rem; color: var(--c-text-muted);">
+                                Share this code with friends to let them join.
+                            </p>
+                        </div>
+
+                        <div id="lobbyCountdown" class="countdown-display" style="display:none; margin-top:20px; font-weight:bold;">
+                            Tournament starts in <span id="lobbyCountdownSeconds">180</span> seconds
+                        </div>
+
+                        <h3 style="text-align: center; margin: 16px 0;">
+                            Players: <span id="playerCount">1</span>/4
+                        </h3>
+                        <div class="players-grid" id="playersGrid" style="display:flex; justify-content:center; gap:20px; margin-top:20px;"></div>
+
+                        <p style="text-align: center; color: var(--c-text-muted); margin-top: 24px;">
+                            ⏳ Waiting for players...<br>
+                            Starts automatically at 4 players or after 3 minutes.
+                        </p>
+                    </div>
+                `;
+
+                this.updatePlayersGrid(players);
+                this.startLobbyCountdown(tournament);
+            },
+
+            // Update the slots display
+            updatePlayersGrid(players) {
+                const grid = document.getElementById('playersGrid');
+                const countEl = document.getElementById('playerCount');
+                if (!grid || !countEl) return;
+
+                const slots = [0, 1, 2, 3];
+                grid.innerHTML = slots.map(slot => {
+                    const player = players.find(p => p.player_slot === slot);
+                    if (player) {
+                        return `
+                            <div class="player-slot filled" style="background:var(--c-surface); padding:15px; border-radius:8px; text-align:center; box-shadow:var(--shadow-sm);">
+                                <div style="font-size: 2rem; margin-bottom: 8px;">👤</div>
+                                <div style="font-weight: 700;">${escapeHtml(player.player_name)}</div>
+                                <div style="font-size: 0.85rem; margin-top: 4px;">Joined</div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="player-slot empty" style="background:var(--c-surface-alt); padding:15px; border-radius:8px; text-align:center; opacity:0.7;">
+                                <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.3;">👤</div>
+                                <div style="font-weight: 600; color: var(--c-text-muted);">Waiting...</div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+
+                countEl.textContent = players.length.toString();
+            },
+
+            // Poll for other players joining the same lobby
+            startLobbyPolling() {
+                if (this.state.checkInterval) {
+                    clearInterval(this.state.checkInterval);
+                }
+
+                this.state.checkInterval = setInterval(async () => {
+                    if (!this.state.tournamentId) return;
+
+                    const players = await this.getPlayersInLobby(this.state.tournamentId);
+                    this.updatePlayersGrid(players);
+
+                    // If 4 players: start immediately
+                    if (players.length === 4) {
+                        clearInterval(this.state.checkInterval);
+                        this.state.checkInterval = null;
+                        startTournamentFromLobby();
+                    }
+                }, 1500);
+            },
+
+            startLobbyCountdown(tournament) {
+                const countdownEl = document.getElementById('lobbyCountdown');
+                const secondsEl = document.getElementById('lobbyCountdownSeconds');
+                if (!countdownEl || !secondsEl) return;
+
+                countdownEl.style.display = 'block';
+                let remaining = 180; // 3 minutes
+
+                if (this.state.lobbyCountdownInterval) {
+                    clearInterval(this.state.lobbyCountdownInterval);
+                }
+
+                this.state.lobbyCountdownInterval = setInterval(async () => {
+                    remaining--;
+                    if (remaining < 0) remaining = 0;
+                    secondsEl.textContent = remaining.toString();
+
+                    if (remaining <= 0) {
+                        clearInterval(this.state.lobbyCountdownInterval);
+
+                        if (!this.state.tournamentId) return;
+                        const players = await this.getPlayersInLobby(this.state.tournamentId);
+
+                        if (players.length >= 2) {
+                            showToast('Lobby time over. Starting...', 'success');
+                            startTournamentFromLobby();
+                        } else {
+                            showToast('Not enough players to start the tournament', 'error');
+                        }
+                    }
+                }, 1000);
+            }
+        };
+
         // --- CONFIG & STATE ---
         const CONFIG = {
             width: 600,
             height: 450,
             dogs: [
-                { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-                { name: 'Banana dog', url: 'https://images.unsplash.com/photo-1701445175220-1f485a27fb41?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8ZnVubnklMjBkb2d8ZW58MHx8MHx8fDA%3D' },
-                { name: 'Golden', url: 'https://images.unsplash.com/photo-1510771463146-e89e6e86560e?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-                { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-                { name: 'Annoying shit that barks for no reason', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-                { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }
+                { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop' },
+                { name: 'Banana dog', url: 'https://images.unsplash.com/photo-1701445175220-1f485a27fb41?w=600&auto=format&fit=crop' },
+                { name: 'Golden', url: 'https://images.unsplash.com/photo-1510771463146-e89e6e86560e?q=80&w=627&auto=format&fit=crop' },
+                { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop' },
+                { name: 'Annoying shit', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop' },
+                { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' }
             ]
         };
 
@@ -454,13 +796,9 @@
 
         // --- INITIALIZATION ---
         function init() {
-            // Load LocalStorage
             const storedDrawings = localStorage.getItem('hddc_drawings');
             const storedVotes = localStorage.getItem('hddc_votes');
             
-            if (storedDrawings) STATE.drawings = JSON.parse(storedDrawings);
-            if (storedVotes) STATE.myVotes = new Set(JSON.parse(storedVotes));
-
             // Setup Canvas Defaults
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -470,15 +808,16 @@
 
             // Populate Dropdown
             const select = document.getElementById('refSelect');
-            CONFIG.dogs.forEach((dog, i) => {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.text = dog.name;
-                select.appendChild(opt);
-            });
-
+            if (select) {
+                CONFIG.dogs.forEach((dog, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = dog.name;
+                    select.appendChild(opt);
+                });
+            }
             // Update Stats
-            updateGlobalStats();
+            if (storedVotes) STATE.myVotes = new Set(JSON.parse(storedVotes));
         }
 
         // --- DRAWING LOGIC ---
@@ -514,12 +853,9 @@
             ctx.lineTo(pos.x, pos.y);
             
             ctx.strokeStyle = STATE.tool === 'eraser' ? '#FFFFFF' : STATE.color;
-            ctx.lineWidth = STATE.tool === 'pen' ? 3 : STATE.tool === 'brush' ? 8 : 20; // Eraser size
+            ctx.lineWidth = STATE.tool === 'pen' ? 3 : STATE.tool === 'brush' ? 8 : 20; 
             
-            if(STATE.tool === 'eraser') {
-                 // Simple white stroke for eraser to keep it compatible with simple fill/save
-                 ctx.strokeStyle = '#FFFFFF';
-            }
+            if(STATE.tool === 'eraser') ctx.strokeStyle = '#FFFFFF';
 
             ctx.stroke();
             STATE.lastPos = pos;
@@ -566,7 +902,6 @@
         }
         
         function colorsMatch(c1, c2) {
-            // Tolerance of 10 for compression artifacts
             return Math.abs(c1.r - c2.r) < 10 && Math.abs(c1.g - c2.g) < 10 && Math.abs(c1.b - c2.b) < 10;
         }
         
@@ -608,7 +943,7 @@
             img.onload = () => {
                 STATE.refImage = img;
                 
-                // Draw to hidden canvas for calculations (resized to fit)
+                // Draw to hidden canvas
                 const scale = Math.min(canvas.width/img.width, canvas.height/img.height);
                 const w = img.width * scale;
                 const h = img.height * scale;
@@ -619,10 +954,8 @@
                 refCtx.fillRect(0,0,canvas.width, canvas.height);
                 refCtx.drawImage(img, x, y, w, h);
                 
-                // Update Overlay
                 updateOverlay();
                 
-                // Enable Controls
                 document.getElementById('toggleRef').disabled = false;
                 document.getElementById('toggleRef').checked = true;
                 document.getElementById('opacitySlider').disabled = false;
@@ -647,21 +980,17 @@
             
             let matchColor = 0, matchShape = 0, totalContent = 0;
 
-            // Sample every 4th pixel for performance
             for(let i=0; i<dData.length; i+=16) {
                 const rR=rData[i], rG=rData[i+1], rB=rData[i+2];
                 const dR=dData[i], dG=dData[i+1], dB=dData[i+2];
 
-                // Is reference NOT white (is it dog?)
                 const isRefContent = (rR < 250 || rG < 250 || rB < 250);
                 const isDrawContent = (dR < 250 || dG < 250 || dB < 250);
 
                 if(isRefContent) {
                     totalContent++;
-                    
                     if(isDrawContent) {
                         matchShape++;
-                        // Color diff
                         const diff = Math.abs(rR-dR) + Math.abs(rG-dG) + Math.abs(rB-dB);
                         if(diff < 100) matchColor++;
                     }
@@ -682,11 +1011,9 @@
         }
 
         // --- SUBMIT & VOTE ---
-       
         function vote(id) {
             const drawing = STATE.drawings.find(d => d.id === id);
             
-            // Checks
             if(!drawing) return;
             if(STATE.myVotes.has(id)) {
                 showToast('You already voted for this!', 'error');
@@ -697,22 +1024,18 @@
                 return;
             }
 
-            // Execute Vote
+            // Execute Vote (local optimistic update, real one happens via Supabase usually)
             drawing.votes++;
             STATE.myVotes.add(id);
             saveData();
-            
-            // UI Update
             showToast('Vote cast! ❤️', 'success');
-            renderGallery(); // Re-render to sort
+            renderGallery(); 
             updateGlobalStats();
         }
 
         // --- RENDERING ---
         function renderGallery() {
             const grid = document.getElementById('galleryGrid');
-            
-            // SORTING LOGIC: Votes Descending, then Date Descending
             const sorted = [...STATE.drawings].sort((a, b) => {
                 if (b.votes !== a.votes) return b.votes - a.votes;
                 return b.timestamp - a.timestamp;
@@ -776,7 +1099,6 @@
 
         function renderAccuracy() {
             const list = document.getElementById('accuracyList');
-            // Only drawings with score > 0
             const sorted = [...STATE.drawings]
                 .filter(d => d.scores.total > 0)
                 .sort((a, b) => b.scores.total - a.scores.total)
@@ -803,18 +1125,144 @@
         }
 
         // --- UTILS & HELPERS ---
+        async function startTournamentLobby() {
+            try {
+                // 1. Create lobby
+                const tournament = await LOBBY.createNewLobby();
+                if (!tournament) return;
+
+                LOBBY.state.tournamentId = tournament.id;
+
+                // 2. Add this player
+                const nameInput = document.getElementById('artistName');
+                const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
+                const player = await LOBBY.addPlayerToLobby(tournament, playerName);
+                if (!player) return;
+
+                // 3. Show lobby UI
+                LOBBY.showLobbyUI(tournament, [player]);
+
+                // 4. Start polling for other players
+                LOBBY.startLobbyPolling();
+            } catch (err) {
+                console.error(err);
+                showToast('Error starting tournament lobby', 'error');
+            }
+        }
+        
+        async function startTournamentFromLobby() {
+            try {
+                if (!LOBBY.state.tournamentId) return;
+
+                // Zeker weten dat we de spelers hebben
+                const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
+                TOURNAMENT.players = players;
+
+                // Load current tournament
+                const { data: tournament, error } = await client
+                    .from('tournaments')
+                    .select('id, status')
+                    .eq('id', LOBBY.state.tournamentId)
+                    .single();
+
+                if (error || !tournament) {
+                    console.error(error);
+                    showToast('Could not start tournament', 'error');
+                    return;
+                }
+
+                // Update status to active + start first round time on server
+                const nowIso = new Date().toISOString();
+
+                const { error: updateError } = await client
+                    .from('tournaments')
+                    .update({
+                        status: 'active',
+                        started_at: nowIso,
+                        current_round: 1,
+                        round_started_at: nowIso
+                    })
+                    .eq('id', LOBBY.state.tournamentId);
+
+                if (updateError) {
+                    console.error(updateError);
+                    showToast('Could not start tournament', 'error');
+                    return;
+                }
+
+                // tick() is VERWIJDERD (was een fout)
+                
+                showToast('Tournament started!', 'success');
+                beginTournamentRounds(); // Deze functie is toegevoegd
+            } catch (err) {
+                console.error(err);
+                showToast('Error starting tournament', 'error');
+            }
+        }
+
+        async function joinExistingLobby() {
+            try {
+                const input = document.getElementById('joinLobbyCodeInput');
+                if (!input) return;
+
+                const code = input.value.trim().toUpperCase();
+                if (!code) {
+                    showToast('Please enter a lobby code', 'error');
+                    return;
+                }
+
+                // Find existing tournament with this code
+                const { data: tournament, error } = await client
+                    .from('tournaments')
+                    .select('*')
+                    .eq('lobby_code', code)
+                    .eq('status', 'waiting')
+                    .single();
+
+                if (error || !tournament) {
+                    console.error(error);
+                    showToast('Lobby not found or already started', 'error');
+                    return;
+                }
+
+                // Add this player
+                const nameInput = document.getElementById('artistName');
+                const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
+                const player = await LOBBY.addPlayerToLobby(tournament, playerName);
+                if (!player) return;
+
+                // Save state
+                LOBBY.state.tournamentId = tournament.id;
+
+                // Get all players and show lobby
+                const players = await LOBBY.getPlayersInLobby(tournament.id);
+                LOBBY.showLobbyUI(tournament, players);
+
+                // Start polling
+                LOBBY.startLobbyPolling();
+            } catch (err) {
+                console.error(err);
+                showToast('Error joining lobby', 'error');
+            }
+        }
+        
         function activateTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-            // Find button roughly by text content or logic, but for now simple works
-            const index = ['draw', 'gallery', 'leaderboard', 'accuracy'].indexOf(tabId);
+            const index = ['draw', 'gallery', 'leaderboard', 'accuracy', 'tournament'].indexOf(tabId);
             if(index >= 0) document.querySelectorAll('.nav-tab')[index].classList.add('active');
 
             if(tabId === 'gallery') renderGallery();
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'accuracy') renderAccuracy();
+            if (tabId === 'tournament') {
+                console.log('Tournament tab opened!');
+                loadTournamentHallOfFame();
+            }
         }
 
         function saveData() {
@@ -861,103 +1309,444 @@
         });
 
         document.getElementById('colorPicker').onchange = (e) => STATE.color = e.target.value;
-        
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
 
+        async function loadTournamentHallOfFame() {
+            const container = document.getElementById('tournamentHallOfFame');
+            const listEl = document.getElementById('tournamentHallOfFameList');
+            if (!container || !listEl) return;
+
+            const { data, error } = await client
+                .from('tournament_winners')
+                .select('*')
+                .order('completed_at', { ascending: false })
+                .limit(20);
+
+            if (error) {
+                console.error('Error loading tournament hall of fame', error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            listEl.innerHTML = data.map((w, index) => `
+                <div class="rank-row">
+                    <div class="rank-num ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''}">
+                        ${index + 1}
+                    </div>
+                    <div>
+                        <div style="font-weight:700;">${w.winner_name || 'Anonymous winner'}</div>
+                        <div style="font-size:0.85rem; color: var(--c-text-muted);">
+                            Players: ${w.player_count || '?'} • Score: ${w.final_score || '?'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+
+        // ===== SIMPLE TOURNAMENT FLOW =====
+        const TOURNAMENT_DRAW_TIME_SECONDS = 180;
+        const TOURNAMENT = {
+            currentRound: 0,
+            totalRounds: 0,
+            players: [],          
+            finalists: [],        
+            winner: null,
+            roundTimerId: null,
+            roundTimeLeft: TOURNAMENT_DRAW_TIME_SECONDS,
+            referenceDogIndex: null
+        };
+
+        // NIEUWE FUNCTIE: Start de rondes
+        function beginTournamentRounds() {
+            TOURNAMENT.currentRound = 1;
+            // Als er meer dan 2 spelers zijn, doen we 2 rondes, anders 1
+            const pCount = TOURNAMENT.players.length || 2; 
+            TOURNAMENT.totalRounds = pCount > 2 ? 2 : 1;
+            
+            showTournamentDrawingRound();
+        }
+
+        // Show drawing UI for the round
+        function showTournamentDrawingRound() {
+            const container = document.getElementById('tournamentDrawing');
+            const welcome = document.getElementById('tournamentWelcome');
+            const lobby = document.getElementById('tournamentLobby');
+            const results = document.getElementById('tournamentResults');
+
+            if (!container) return;
+
+            if (welcome) welcome.style.display = 'none';
+            if (lobby) lobby.style.display = 'none';
+            if (results) results.style.display = 'none';
+
+            container.style.display = 'block';
+
+            TOURNAMENT.referenceDogIndex = Math.floor(Math.random() * CONFIG.dogs.length);
+            const refDog = CONFIG.dogs[TOURNAMENT.referenceDogIndex];
+
+            const refSelect = document.getElementById('refSelect');
+            if (refSelect) {
+                refSelect.value = TOURNAMENT.referenceDogIndex;
+                const event = new Event('change');
+                refSelect.dispatchEvent(event);
+            }
+
+            // Reset canvas
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveHistory();
+
+            container.innerHTML = `
+                <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center; margin-bottom: 10px;">
+                        ${buildTournamentRoundTitle()}
+                    </h2>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 10px;">
+                        Reference: <strong>${refDog.name}</strong> – You have 3 minutes to draw.
+                    </p>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
+                        Time left: <span id="tournamentRoundCountdown">180</span> seconds
+                    </p>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
+                        Use the normal drawing canvas in the "Draw" tab.
+                    </p>
+                </div>
+            `;
+
+            activateTab('draw');
+
+            // Start countdown from server time
+            loadTournamentState().then(state => {
+                if (!state || !state.round_started_at) {
+                    // Fallback als server tijd faalt
+                    startTournamentCountdownFromTimestamp(new Date().toISOString(), TOURNAMENT_DRAW_TIME_SECONDS);
+                    return;
+                }
+                const duration = state.draw_time_seconds || TOURNAMENT_DRAW_TIME_SECONDS;
+                startTournamentCountdownFromTimestamp(state.round_started_at, duration);
+            });
+        }
+
+        // NIEUWE FUNCTIE: Haal state op
+        async function loadTournamentState() {
+            try {
+                const { data } = await client
+                    .from('tournaments')
+                    .select('*')
+                    .eq('id', LOBBY.state.tournamentId)
+                    .single();
+                return data;
+            } catch (e) { return null; }
+        }
+
+        // NIEUWE FUNCTIE: Timer logica
+        function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
+            const countdownEl = document.getElementById('tournamentRoundCountdown');
+            const startTime = new Date(startTimeIso).getTime();
+            const endTime = startTime + (durationSeconds * 1000);
+
+            if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
+
+            TOURNAMENT.roundTimerId = setInterval(() => {
+                const now = Date.now();
+                const leftMs = endTime - now;
+                let leftSec = Math.ceil(leftMs / 1000);
+
+                if (leftSec < 0) leftSec = 0;
+
+                if (countdownEl) countdownEl.textContent = leftSec;
+                TOURNAMENT.roundTimeLeft = leftSec;
+
+                if (leftSec <= 0) {
+                    clearInterval(TOURNAMENT.roundTimerId);
+                    showToast('Time is up! Calculating scores...', 'info');
+                    onTournamentRoundEnd();
+                }
+            }, 1000);
+        }
+
+        function buildTournamentRoundTitle() {
+            const players = TOURNAMENT.players.length;
+            if (players === 2) return 'Final Round';
+            if (players > 2 && TOURNAMENT.currentRound === 1) return 'Knock-out Round';
+            return 'Final Round';
+        }
+
+        // Called when 3 minutes of drawing are over
+        async function onTournamentRoundEnd() {
+            try {
+                const scores = calculateAccuracy(); 
+                const totalScore = scores.total || 0;
+
+                if (LOBBY.state.playerId && LOBBY.state.tournamentId) {
+                    await client.from('tournament_rounds').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        player_id: LOBBY.state.playerId,
+                        round_index: TOURNAMENT.currentRound,
+                        total_score: totalScore,
+                        color_score: scores.color || 0,
+                        shape_score: scores.shape || 0,
+                        reference_dog_index: TOURNAMENT.referenceDogIndex
+                    }]);
+                }
+
+                await showTournamentResultsForCurrentRound();
+            } catch (err) {
+                console.error(err);
+                showToast('Error saving tournament round score', 'error');
+            }
+        }
+
+        async function showTournamentResultsForCurrentRound() {
+            const container = document.getElementById('tournamentResults');
+            const drawingView = document.getElementById('tournamentDrawing');
+            
+            if (!container) return;
+            if (drawingView) drawingView.style.display = 'none';
+            container.style.display = 'block';
+
+            // Wait a bit for other players data
+            showToast('Waiting for opponent scores...', 'info');
+            await new Promise(r => setTimeout(r, 2000));
+
+            const { data: roundScores, error } = await client
+                .from('tournament_rounds')
+                .select('*')
+                .eq('tournament_id', LOBBY.state.tournamentId)
+                .eq('round_index', TOURNAMENT.currentRound);
+
+            if (error) {
+                showToast('Could not load round results', 'error');
+                return;
+            }
+
+            const playersById = {};
+            TOURNAMENT.players.forEach(p => { playersById[p.id] = p; });
+
+            const entries = (roundScores || []).map(r => {
+                return {
+                    player: playersById[r.player_id],
+                    total: r.total_score
+                };
+            }).filter(e => e.player);
+
+            entries.sort((a, b) => b.total - a.total);
+
+            const title = buildTournamentRoundTitle() + ' results';
+            let html = `
+                <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center; margin-bottom: 16px;">${title}</h2>
+            `;
+
+            if (entries.length === 0) {
+                html += `<p style="text-align:center;">No scores yet.</p>`;
+            } else {
+                html += `<ul style="list-style:none; padding:0;">`;
+                entries.forEach(e => {
+                    const isMe = e.player.id === LOBBY.state.playerId;
+                    html += `
+                        <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--c-surface-alt);">
+                            <span>${isMe ? 'You' : escapeHtml(e.player.player_name)}</span>
+                            <span>${e.total.toFixed(0)} points</span>
+                        </li>
+                    `;
+                });
+                html += `</ul>`;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+
+            decideNextTournamentStep(entries);
+        }
+
+        async function decideNextTournamentStep(entries) {
+            const playersCount = TOURNAMENT.players.length;
+
+            if (playersCount === 2 || TOURNAMENT.currentRound === TOURNAMENT.totalRounds) {
+                await determineTournamentWinner();
+                return;
+            }
+
+            if (playersCount > 2 && TOURNAMENT.currentRound === 1) {
+                TOURNAMENT.finalists = entries.slice(0, 2).map(e => e.player);
+                TOURNAMENT.players = TOURNAMENT.finalists; // Update players to just finalists
+                TOURNAMENT.currentRound = 2;
+                TOURNAMENT.totalRounds = 2;
+
+                showFinalCountdownBeforeNextRound();
+                return;
+            }
+
+            await determineTournamentWinner();
+        }
+
+        function showFinalCountdownBeforeNextRound() {
+            const container = document.getElementById('tournamentResults');
+            if (!container) return;
+
+            const secondsTotal = 15;
+            let remaining = secondsTotal;
+
+            const div = document.createElement('div');
+            div.style.textAlign = 'center';
+            div.style.marginTop = '24px';
+            div.innerHTML = `<h3>Final round starts soon</h3><p>Start in <span id="finalCountdown">${secondsTotal}</span> seconds.</p>`;
+            container.querySelector('.drawing-card').appendChild(div);
+
+            const span = document.getElementById('finalCountdown');
+            const intervalId = setInterval(() => {
+                remaining--;
+                if (remaining < 0) remaining = 0;
+                if (span) span.textContent = remaining.toString();
+
+                if (remaining <= 0) {
+                    clearInterval(intervalId);
+                    showTournamentDrawingRound(); // Start next round
+                }
+            }, 1000);
+        }
+
+        async function determineTournamentWinner() {
+            try {
+                const container = document.getElementById('tournamentResults');
+                if (!container) return;
+
+                const { data: allRounds, error } = await client
+                    .from('tournament_rounds')
+                    .select('*')
+                    .eq('tournament_id', LOBBY.state.tournamentId);
+
+                if (error) return;
+
+                const totals = {};
+                (allRounds || []).forEach(r => {
+                    if (!totals[r.player_id]) totals[r.player_id] = 0;
+                    totals[r.player_id] += r.total_score;
+                });
+
+                const playersById = {};
+                // Use original players list or check if we need to reload
+                const allPlayers = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
+                allPlayers.forEach(p => { playersById[p.id] = p; });
+
+                const entries = Object.entries(totals).map(([playerId, total]) => ({
+                    player: playersById[playerId],
+                    total
+                })).filter(e => e.player);
+
+                entries.sort((a, b) => b.total - a.total);
+
+                if (entries.length === 0) return;
+
+                const winnerEntry = entries[0];
+                TOURNAMENT.winner = winnerEntry.player;
+
+                const card = container.querySelector('.drawing-card');
+                card.innerHTML += `
+                    <div style="margin-top: 24px; text-align:center; padding-top:20px; border-top:1px solid #eee;">
+                        <h3>🏆 TOURNAMENT WINNER</h3>
+                        <h1 style="color:var(--c-primary); margin:10px 0;">${escapeHtml(winnerEntry.player.player_name)}</h1>
+                        <p>Total Score: ${winnerEntry.total.toFixed(0)} points</p>
+                        <button class="btn-cta" style="margin-top:20px;" onclick="location.reload()">Back to Home</button>
+                    </div>
+                `;
+                
+                // Save winner to DB
+                await client.from('tournament_winners').insert([{
+                    tournament_id: LOBBY.state.tournamentId,
+                    winner_name: winnerEntry.player.player_name,
+                    final_score: winnerEntry.total,
+                    player_count: allPlayers.length
+                }]);
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         // START
         init();
-	</script>
 
-    	
-	    <div id="gallery-container"></div>
+        // Load drawings from Supabase when page loads
+        window.addEventListener('load', async function() {
+            await loadDrawingsFromSupabase();
+            document.getElementById('btnSubmit').addEventListener('click', publishDrawingToSupabase);
+        });
 
-		<script>
-	let client;
+        async function publishDrawingToSupabase() {
+            const titleInput = document.getElementById('dogTitle');
+            const artistInput = document.getElementById('artistName');
 
-window.addEventListener('load', async function() {
-  const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz";
+            const title = titleInput.value.trim();
+            const artist = artistInput.value.trim();
+            const imageData = canvas.toDataURL();
+            const scores = calculateAccuracy();
 
-  client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  console.log("Supabase connected! ✅");
+            if (!title || !artist) {
+                alert('Please fill in title and artist name!');
+                return;
+            }
 
-  // Load drawings from Supabase when page loads
-  await loadDrawingsFromSupabase();
+            try {
+                const { data, error } = await client
+                .from('drawings')
+                .insert([{ 
+                    title: title, 
+                    artist_name: artist, 
+                    image_data: imageData,
+                    scores: scores,
+                    votes: 0 
+                }]);
 
-  // Hook the submit button to save to Supabase
-  document.getElementById('btnSubmit').addEventListener('click', publishDrawingToSupabase);
-});
+                if (error) throw error;
 
-async function publishDrawingToSupabase() {
-  const titleInput = document.getElementById('dogTitle');
-  const artistInput = document.getElementById('artistName');
+                showToast('Drawing published to Supabase! 🎉', 'success');
+                titleInput.value = '';
+                artistInput.value = '';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                STATE.history = [];
+                STATE.historyStep = -1;
 
-  const title = titleInput.value.trim();
-  const artist = artistInput.value.trim();
-  const imageData = canvas.toDataURL();
-  const scores = calculateAccuracy();
+                await loadDrawingsFromSupabase();
+                renderGallery();
+            } catch (err) {
+                console.error('Error publishing:', err);
+                showToast('Error saving to Supabase!', 'error');
+            }
+        }
 
-  if (!title || !artist) {
-    alert('Please fill in title and artist name!');
-    return;
-  }
+        async function loadDrawingsFromSupabase() {
+            try {
+                const { data, error } = await client
+                .from('drawings')
+                .select('*')
+                .order('votes', { ascending: false });
 
-  try {
-    const { data, error } = await client
-      .from('drawings')
-      .insert([{ 
-        title: title, 
-        artist_name: artist, 
-        image_data: imageData,
-        scores: scores,
-        votes: 0 
-      }]);
+                if (error) throw error;
 
-    if (error) throw error;
+                STATE.drawings = data.map(d => ({
+                    id: d.id,
+                    artist: d.artist_name,
+                    image: d.image_data,
+                    votes: d.votes,
+                    scores: d.scores || { total: 0, color: 0, shape: 0 },
+                    timestamp: new Date(d.created_at).getTime(),
+                    isLocal: false
+                }));
 
-    showToast('Drawing published to Supabase! 🎉', 'success');
-    titleInput.value = '';
-    artistInput.value = '';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    STATE.history = [];
-    STATE.historyStep = -1;
-
-    // Reload gallery
-    await loadDrawingsFromSupabase();
-    renderGallery();
-  } catch (err) {
-    console.error('Error publishing:', err);
-    showToast('Error saving to Supabase!', 'error');
-  }
-}
-
-async function loadDrawingsFromSupabase() {
-  try {
-    const { data, error } = await client
-      .from('drawings')
-      .select('*')
-      .order('votes', { ascending: false });
-
-    if (error) throw error;
-
-    // Convert Supabase data to STATE.drawings format
-    STATE.drawings = data.map(d => ({
-      id: d.id,
-      artist: d.artist_name,
-      image: d.image_data,
-      votes: d.votes,
-       scores: d.scores || { total: 0, color: 0, shape: 0 },
-      timestamp: new Date(d.created_at).getTime(),
-      isLocal: false
-    }));
-
-    console.log('Loaded', STATE.drawings.length, 'drawings from Supabase');
-  } catch (err) {
-    console.error('Error loading drawings:', err);
-    showToast('Could not load drawings', 'error');
-  }
-}
-          </script>
+                console.log('Loaded', STATE.drawings.length, 'drawings from Supabase');
+            } catch (err) {
+                console.error('Error loading drawings:', err);
+            }
+        }
+    </script>
 </body>
 </html>
