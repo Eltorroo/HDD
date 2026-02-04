@@ -534,6 +534,7 @@
 
     <script>
         // --- TOURNAMENT LOBBY SYSTEM ---
+let client;
         const LOBBY = {
             state: {
                 tournamentId: null,
@@ -745,7 +746,7 @@ async addPlayerToLobby(tournament, playerName) {
 
 
 
-                       startLobbyCountdown(tournament) {
+                      startLobbyCountdown(tournament) {
     const countdownEl = document.getElementById('lobbyCountdown');
     const secondsEl = document.getElementById('lobbyCountdownSeconds');
     if (!countdownEl || !secondsEl) return;
@@ -780,6 +781,7 @@ async addPlayerToLobby(tournament, playerName) {
     }, 1000);
 }
 
+
 // --- CONFIG & STATE ---
 const CONFIG = {
     width: 600,
@@ -806,7 +808,6 @@ const STATE = {
     lastPos: { x: 0, y: 0 }
 };
 
-        };
 
         // --- DOM ELEMENTS ---
         const canvas = document.getElementById('drawCanvas');
@@ -1453,49 +1454,6 @@ const TOURNAMENT = {
 };
 
 // Start tournament once lobby is ready (called from startTournamentFromLobby)
-async function beginTournamentRounds() {
-    try {
-        // Fetch all players from Supabase for this tournament
-        const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
-        if (!players || players.length < 2) {
-            showToast('Not enough players to start rounds', 'error');
-            return;
-        }
-
-        TOURNAMENT.players = players;
-        TOURNAMENT.currentRound = 1;
-
-        // Decide flow based on number of players
-        if (players.length === 2) {
-            TOURNAMENT.totalRounds = 1; // direct final
-        } else if (players.length === 3) {
-            TOURNAMENT.totalRounds = 2; // trio, then final (top 2)
-        } else {
-            TOURNAMENT.totalRounds = 2; // 4 players: knock-out round, then final (top 2)
-        }
-
-        showTournamentDrawingRound();
-function startTournamentCountdownFromTimestamp(startIso, durationSeconds) {
-    const span = document.getElementById('tournamentRoundCountdown');
-    if (!span) return;
-
-    function tick() {
-        const startMs = new Date(startIso).getTime();
-        const nowMs = Date.now();
-        const endMs = startMs + durationSeconds * 1000;
-        const remaining = Math.max(0, Math.floor((endMs - nowMs) / 1000));
-
-        span.textContent = remaining.toString();
-
-        if (remaining > 0) {
-            requestAnimationFrame(tick);
-        } else {
-            // Hier GEEN onTournamentRoundEnd meer automatisch.
-        }
-    }
-
-    tick();
-}
 
     } catch (err) {
         console.error(err);
@@ -1557,8 +1515,6 @@ function showTournamentDrawingRound() {
 
     // Auto-switch to Draw tab so player can draw
     activateTab('draw');
-
-ctivateTab('draw')
 
     // Auto‑switch to Draw tab so player can draw
     activateTab('draw');
@@ -1859,7 +1815,7 @@ function saveTournamentWinnerToHallOfFame() {
 	    <div id="gallery-container"></div>
 
 		<script>
-	let client;
+	
 
 window.addEventListener('load', async function() {
   const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
