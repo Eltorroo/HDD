@@ -1216,21 +1216,63 @@ const player = await LOBBY.addPlayerToLobby(tournament, playerName);
             return;
         }
 
-        // Update status to active
-        const { error: updateError } = await client
-            .from('tournaments')
-            .update({
-                status: 'active',
-                started_at: new Date().toISOString(),
-                current_round: 1
-            })
-            .eq('id', LOBBY.state.tournamentId);
+        // Update status to active + start first round time on server
+const nowIso = new Date().toISOString();
+
+const { error: updateError } = await client
+    .from('tournaments')
+    .update({
+        status: 'active',
+        started_at: nowIso,
+        current_round: 1,
+        round_started_at: nowIso
+    })
+    .eq('id', LOBBY.state.tournamentId);
+
 
         if (updateError) {
             console.error(updateError);
             showToast('Could not start tournament', 'error');
             return;
         }
+async function loadTournamentState() {
+    if (!LOBBY.state.tournamentId) return null;
+
+    const { data, error } = await client
+        .from('tournaments')
+        .select('status, current_round, round_started_at, draw_time_seconds')
+        .eq('id', LOBBY.state.tournamentId)
+        .single();
+
+    if (error) {
+        console.error('Error loading tournament state', error);
+        return null;
+    }
+
+    return data;
+}
+
+function startTournamentCountdownFromTimestamp(startIso, durationSeconds) {
+    const span = document.getElementById('tournamentRoundCountdown');
+    if (!span) return;
+
+    function tick() {
+        const startMs = new Date(startIso).getTime();
+        const nowMs = Date.now();
+        const endMs = startMs + durationSeconds * 1000;
+        const remaining = Math.max(0, Math.floor((endMs - nowMs) / 1000));
+
+        span.textContent = remaining.toString();
+
+        if (remaining > 0) {
+            requestAnimationFrame(tick);
+        } else {
+            // NIET automatisch onTournamentRoundEnd hier aanroepen
+        }
+    }
+
+    tick();
+}
 
         showToast('Tournament started!', 'success');
         // BELANGRIJK: hier begint de tekenfase
@@ -1525,8 +1567,15 @@ ctivateTab('draw')
     // Auto‑switch to Draw tab so player can draw
     activateTab('draw');
 
+// Countdown vanuit server-tijd laten lopen
+loadTournamentState().then(state => {
+    if (!state || !state.round_started_at) return;
+    const duration = state.draw_time_seconds || TOURNAMENT_DRAW_TIME_SECONDS;
+    startTournamentCountdownFromTimestamp(state.round_started_at, duration);
+});
+
+
     // Start countdown
-    TOURNAMENT.roundTimeLeft = TOURNAMENT_DRAW_TIME_SECONDS;
     if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
    }
 
