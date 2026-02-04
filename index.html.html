@@ -517,6 +517,11 @@
                 <div id="tournamentResults" style="display:none;">
                     <!-- For round and final results -->
                 </div>
+<div id="tournamentHallOfFame" style="margin-top: 32px; display:none;">
+    <h3>🏆 Tournament Hall of Fame</h3>
+    <div id="tournamentHallOfFameList"></div>
+</div>
+
             </div>
         </div>
 
@@ -581,48 +586,50 @@
             },
             
             // Join tournament door speler toe te voegen
-            async addPlayerToLobby(tournament) {
-                try {
-                    // Haal huidige spelers op
-                    const { data: existingPlayers } = await client
-                        .from('tournament_players')
-                        .select('player_slot')
-                        .eq('tournament_id', tournament.id);
-                    
-                    // Bepaal volgende slot (0, 1, 2, 3)
-                    let slot = 0;
-                    if (existingPlayers && existingPlayers.length > 0) {
-                        const usedSlots = existingPlayers.map(p => p.player_slot);
-                        while (usedSlots.includes(slot)) {
-                            slot++;
-                        }
-                    }
-                    
-                    // Voeg speler toe
-                    const { data: player, error } = await client
-                        .from('tournament_players')
-                        .insert([{
-                            tournament_id: tournament.id,
-                            player_slot: slot,
-                            is_eliminated: false,
-                            current_round: 1
-                        }])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    this.state.playerId = player.id;
-                    console.log('Player added:', player.id);
-                    
-                    return player;
-                } catch (err) {
-                    console.error('Error adding player:', err);
-                    showToast('Error joining lobby', 'error');
-                    return null;
-                }
-            },
-            
+async addPlayerToLobby(tournament, playerName) {
+    try {
+        // Haal huidige spelers op
+        const { data: existingPlayers } = await client
+            .from('tournament_players')
+            .select('player_slot')
+            .eq('tournament_id', tournament.id);
+
+        // Bepaal volgende slot (0, 1, 2, 3)
+        let slot = 0;
+        if (existingPlayers && existingPlayers.length > 0) {
+            const usedSlots = existingPlayers.map(p => p.player_slot);
+            while (usedSlots.includes(slot)) {
+                slot++;
+            }
+        }
+
+        // Voeg speler toe, inclusief naam
+        const { data: player, error } = await client
+            .from('tournament_players')
+            .insert([{
+                tournament_id: tournament.id,
+                player_slot: slot,
+                is_eliminated: false,
+                current_round: 1,
+                player_name: playerName
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        this.state.playerId = player.id;
+        this.state.playerName = playerName;
+        console.log('Player added:', player.id);
+
+        return player;
+    } catch (err) {
+        console.error('Error adding player:', err);
+        showToast('Error joining lobby', 'error');
+        return null;
+    }
+},
+
             // Haal alle spelers in lobby op
                         async getPlayersInLobby(tournamentId) {
                 try {
@@ -1171,7 +1178,12 @@
 LOBBY.state.tournamentId = tournament.id;
 
                 // 2. Add this player
-                const player = await LOBBY.addPlayerToLobby(tournament);
+                // Use artistName as player name for the tournament
+const nameInput = document.getElementById('artistName');
+const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
+const player = await LOBBY.addPlayerToLobby(tournament, playerName);
+
                 if (!player) return;
 
                 // 3. Show lobby UI
@@ -1254,7 +1266,12 @@ LOBBY.state.tournamentId = tournament.id;
                 }
 
                 // Add this player
-                const player = await LOBBY.addPlayerToLobby(tournament);
+                // Use artistName as player name for the tournament
+const nameInput = document.getElementById('artistName');
+const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
+const player = await LOBBY.addPlayerToLobby(tournament, playerName);
+
                 if (!player) return;
 
                 // Save state
@@ -1284,9 +1301,11 @@ LOBBY.state.tournamentId = tournament.id;
             if(tabId === 'gallery') renderGallery();
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'accuracy') renderAccuracy();
-            if(tabId === 'tournament') {
-                console.log('Tournament tab opened!');
-            }
+               if (tabId === 'tournament') {
+        console.log('Tournament tab opened!');
+        loadTournamentHallOfFame();
+    }
+
         }
 
 
@@ -1337,6 +1356,44 @@ LOBBY.state.tournamentId = tournament.id;
         
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
+
+async function loadTournamentHallOfFame() {
+    const container = document.getElementById('tournamentHallOfFame');
+    const listEl = document.getElementById('tournamentHallOfFameList');
+    if (!container || !listEl) return;
+
+    const { data, error } = await client
+        .from('tournament_winners')
+        .select('*')
+        .order('completed_at', { ascending: false })
+        .limit(20);
+
+    if (error) {
+        console.error('Error loading tournament hall of fame', error);
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    listEl.innerHTML = data.map((w, index) => `
+        <div class="rank-row">
+            <div class="rank-num ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''}">
+                ${index + 1}
+            </div>
+            <div>
+                <div style="font-weight:700;">${w.winner_name || 'Anonymous winner'}</div>
+                <div style="font-size:0.85rem; color: var(--c-text-muted);">
+                    Players: ${w.player_count || '?'} • Score: ${w.final_score || '?'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
 
 // ===== SIMPLE TOURNAMENT FLOW (USING EXISTING LOBBY) =====
 
@@ -1549,28 +1606,35 @@ async function showTournamentResultsForCurrentRound() {
 
     // Build HTML
     const title = buildTournamentRoundTitle() + ' results';
-    let html = `
-        <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-            <h2 style="text-align:center; margin-bottom: 16px;">${title}</h2>
-    `;
+let html = `
+    <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+        <h2 style="text-align:center; margin-bottom: 16px;">${title}</h2>
+`;
 
-    if (entries.length === 0) {
-        html += `<p style="text-align:center;">No scores yet.</p>`;
-    } else {
-        html += `<ul style="list-style:none; padding:0;">`;
-        entries.forEach(e => {
-            html += `
-                <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--c-surface-alt);">
-                    <span>${'Player ' + (e.player.player_slot + 1)}</span>
-                    <span>${e.total.toFixed(0)} points</span>
-                </li>
-            `;
-        });
-        html += `</ul>`;
-    }
+if (entries.length === 0) {
+    html += `<p style="text-align:center;">No scores yet.</p>`;
+} else {
+    html += `<ul style="list-style:none; padding:0;">`;
+    entries.forEach(e => {
+        const isMe = e.player.id === LOBBY.state.playerId;
+        html += `
+            <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--c-surface-alt);">
+                <span>${isMe ? 'You' : 'Player ' + (e.player.player_slot + 1)}</span>
+                <span>${e.total.toFixed(0)} points</span>
+            </li>
+        `;
+    });
+    html += `</ul>`;
+}
 
-    html += `</div>`;
-    container.innerHTML = html;
+html += `
+        <p style="text-align:center; color: var(--c-text-muted); margin-top:16px;">
+            You can go back to the main menu while the tournament prepares the next round.
+        </p>
+    </div>
+`;
+container.innerHTML = html;
+
 
     // Decide next step
     await decideNextTournamentStep(entries);
@@ -1579,8 +1643,8 @@ async function showTournamentResultsForCurrentRound() {
 async function decideNextTournamentStep(entries) {
     const playersCount = TOURNAMENT.players.length;
 
+    // Final already reached by round count or only 2 players total
     if (playersCount === 2 || TOURNAMENT.currentRound === TOURNAMENT.totalRounds) {
-        // Final done -> determine winner from all rounds
         await determineTournamentWinner();
         return;
     }
@@ -1592,8 +1656,7 @@ async function decideNextTournamentStep(entries) {
         TOURNAMENT.currentRound = 2;
         TOURNAMENT.totalRounds = 2;
 
-        showToast('Finalists selected! Starting final round soon...', 'success');
-        setTimeout(showTournamentDrawingRound, 3000);
+        showFinalCountdownBeforeNextRound();
         return;
     }
 
@@ -1604,14 +1667,42 @@ async function decideNextTournamentStep(entries) {
         TOURNAMENT.currentRound = 2;
         TOURNAMENT.totalRounds = 2;
 
-        showToast('Finalists selected! Starting final round soon...', 'success');
-        setTimeout(showTournamentDrawingRound, 3000);
+        showFinalCountdownBeforeNextRound();
         return;
     }
 
     // Fallback: determine winner
     await determineTournamentWinner();
 }
+
+
+function showFinalCountdownBeforeNextRound() {
+    const container = document.getElementById('tournamentResults');
+    if (!container) return;
+
+    const secondsTotal = 30;
+    let remaining = secondsTotal;
+
+    container.innerHTML += `
+        <div style="margin-top:24px; text-align:center;">
+            <h3>Final round starts soon</h3>
+            <p>Prepare for the final! Round will start in <span id="finalCountdown">${secondsTotal}</span> seconds.</p>
+        </div>
+    `;
+
+    const span = document.getElementById('finalCountdown');
+    const intervalId = setInterval(() => {
+        remaining--;
+        if (remaining < 0) remaining = 0;
+        if (span) span.textContent = remaining.toString();
+
+        if (remaining <= 0) {
+            clearInterval(intervalId);
+            showTournamentDrawingRound();
+        }
+    }, 1000);
+}
+
 
 async function determineTournamentWinner() {
     try {
