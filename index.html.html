@@ -202,52 +202,6 @@
     max-width: 600px;
     width: 100%;
         }
-        /* --- TOURNAMENT STYLES --- */
-        .tournament-tab {
-            background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
-            color: white !important;
-            font-weight: 700;
-        }
-        
-        .tournament-tab:hover {
-            background: linear-gradient(135deg, #B45309 0%, #D97706 100%);
-        }
-        
-        .tournament-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .tournament-welcome {
-            text-align: center;
-            padding: 40px 20px;
-        }
-        
-        .tournament-welcome h1 {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-            color: var(--c-primary);
-        }
-        
-        .tournament-btn {
-            padding: 16px 32px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.3s;
-            background: var(--c-primary);
-            color: white;
-        }
-        
-        .tournament-btn:hover {
-            background: var(--c-primary-hover);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
 
         /* --- GALLERY GRID --- */
         .gallery-grid {
@@ -360,28 +314,26 @@
 <body>
 
     <header class="hero">
-        <h1>ðŸ¾ Hand Drawn Dog Competition</h1>
+        <h1>🐾 Hand Drawn Dog Competition</h1>
         <p>Show off your artistic skills. Draw a dog, get votes, and become the top artist.</p>
         
         <div class="hero-stats">
             <span><strong id="statTotalDrawings">0</strong> Drawings</span>
-            <span>â€¢</span>
+            <span>•</span>
             <span><strong id="statTotalVotes">0</strong> Votes Cast</span>
         </div>
 
-        <button class="btn-cta" onclick="activateTab('draw')">âœï¸ Start Drawing Now</button>
+        <button class="btn-cta" onclick="activateTab('draw')">✏️ Start Drawing Now</button>
     </header>
 
     <nav class="nav-container">
-    <div class="nav-tabs">
-        <button class="nav-tab active" onclick="activateTab('draw')">Draw</button>
-        <button class="nav-tab" onclick="activateTab('gallery')">Gallery</button>
-        <button class="nav-tab" onclick="activateTab('leaderboard')">Leaderboard</button>
-        <button class="nav-tab" onclick="activateTab('accuracy')">Accuracy</button>
-        <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">ðŸ† Tournament</button>
-    </div>
-</nav>
-
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="activateTab('draw')">Draw</button>
+            <button class="nav-tab" onclick="activateTab('gallery')">Gallery</button>
+            <button class="nav-tab" onclick="activateTab('leaderboard')">Leaderboard</button>
+            <button class="nav-tab" onclick="activateTab('accuracy')">Smart Score</button>
+        </div>
+    </nav>
 
     <div class="container">
         
@@ -399,15 +351,15 @@
 </div>
 
                 <div class="toolbar">
-                    <button class="tool-btn active" id="btnPen" title="Pen">ðŸ–Šï¸</button>
-                    <button class="tool-btn" id="btnBrush" title="Brush">ðŸ–Œï¸</button>
-                    <button class="tool-btn" id="btnEraser" title="Eraser">ðŸ§¹</button>
-                    <button class="tool-btn" id="btnFill" title="Fill">ðŸª£</button>
+                    <button class="tool-btn active" id="btnPen" title="Pen">🖊️</button>
+                    <button class="tool-btn" id="btnBrush" title="Brush">🖌️</button>
+                    <button class="tool-btn" id="btnEraser" title="Eraser">🧹</button>
+                    <button class="tool-btn" id="btnFill" title="Fill">🪣</button>
                     <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
                     <input type="color" id="colorPicker" value="#000000" style="height: 44px; width: 44px; padding: 0; border: none; cursor: pointer;">
                     <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
-                    <button class="tool-btn" id="btnUndo" title="Undo">â†¶</button>
-                    <button class="tool-btn" id="btnClear" title="Clear">ðŸ—‘ï¸</button>
+                    <button class="tool-btn" id="btnUndo" title="Undo">↶</button>
+                    <button class="tool-btn" id="btnClear" title="Clear">🗑️</button>
                 </div>
 
                 <div class="canvas-wrapper">
@@ -444,7 +396,7 @@
 
         <div id="leaderboard" class="tab-content">
             <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-                <h2 style="text-align: center; margin-bottom: 20px;">ðŸ† Hall of Fame</h2>
+                <h2 style="text-align: center; margin-bottom: 20px;">🏆 Hall of Fame</h2>
                 <div id="leaderboardList">
                     </div>
             </div>
@@ -452,7 +404,7 @@
 
         <div id="accuracy" class="tab-content">
             <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-                <h2 style="text-align: center; margin-bottom: 10px;">ðŸŽ¯ Smart Accuracy Scores</h2>
+                <h2 style="text-align: center; margin-bottom: 10px;">🎯 Smart Accuracy Scores</h2>
                 <p style="text-align: center; color: var(--c-text-muted); margin-bottom: 30px;">
                     Our algorithm analyzes color matching and shape composition.
                 </p>
@@ -462,330 +414,12 @@
         </div>
 
     </div>
-                      <!-- TOURNAMENT TAB -->
-        <div class="tab-content" id="tournament">
-            <div class="tournament-container">
-                <!-- Welcome Screen -->
-                <div id="tournamentWelcome" class="tournament-welcome">
-                    <h1>ðŸ† Tournament Mode</h1>
-                    <p style="font-size: 1.1rem; color: var(--c-text-muted); margin-bottom: 32px;">
-                        Competitive drawing competition against other players!
-                    </p>
-                   <button class="tournament-btn" onclick="startTournamentLobby()">
-    âš¡ Create & Join Tournament
-</button>
 
-<div style="margin-top: 24px;">
-    <p style="margin-bottom: 8px; color: var(--c-text-muted); font-size: 0.95rem;">
-        Already have a lobby code?
-    </p>
-    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-        <input id="joinLobbyCodeInput"
-               placeholder="Enter lobby code"
-               style="padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; min-width: 180px; text-transform: uppercase;">
-        <button class="tournament-btn" style="padding: 10px 18px; font-size: 0.95rem;"
-                onclick="joinExistingLobby()">
-            ðŸ”‘ Join with code
-        </button>
-    </div>
-</div>
-                    
-<div style="margin-top: 32px; padding: 20px; background: var(--c-surface-alt); border-radius: var(--radius-md);">
-    <h3>ðŸ“‹ How it works:</h3>
-
-                        <ul style="text-align: left; max-width: 500px; margin: 16px auto; line-height: 1.8;">
-                            <li>ðŸŽ¯ 2â€“4 players per tournament</li>
-                            <li>â±ï¸ Lobby starts in 3 minutes (or with 4 players)</li>
-                            <li>ðŸŽ¨ 2 minutes per round to draw</li>
-                            <li>ðŸ… With 3 players: top 2 go to the finals</li>
-                            <li>ðŸ† Winner enters the Hall of Fame</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Lobby Waiting -->
-                <div id="tournamentLobby" style="display:none;">
-                    <!-- Filled by LOBBY.showLobbyUI -->
-                </div>
-                
-                <!-- Drawing Phase (later) -->
-                <div id="tournamentDrawing" style="display:none;">
-                    <!-- For the actual drawing rounds -->
-                </div>
-                
-                <!-- Results (later) -->
-                <div id="tournamentResults" style="display:none;">
-                    <!-- For round and final results -->
-                </div>
-<div id="tournamentHallOfFame" style="margin-top: 32px; display:none;">
-    <h3>ðŸ† Tournament Hall of Fame</h3>
-    <div id="tournamentHallOfFameList"></div>
-</div>
-
-            </div>
-        </div>
-
-                
-           
-
-  
-
-        <div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
     <script>
-        // --- TOURNAMENT LOBBY SYSTEM ---
-        const LOBBY = {
-            state: {
-                tournamentId: null,
-                playerId: null,
-                playerName: '',
-                checkInterval: null
-            },
-            
-            // Genereer 6-letter code
-            generateCode() {
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let code = '';
-                for (let i = 0; i < 6; i++) {
-                    code += chars[Math.floor(Math.random() * chars.length)];
-                }
-                return code;
-            },
-            
-            // Start nieuw tournament
-            async createNewLobby() {
-                try {
-                    const lobbyCode = this.generateCode();
-                    const randomDog = Math.floor(Math.random() * CONFIG.dogs.length);
-                    
-                    console.log('Creating lobby:', lobbyCode);
-                    
-                    const { data: tournament, error } = await client
-                        .from('tournaments')
-                        .insert([{
-                            lobby_code: lobbyCode,
-                            reference_dog_id: randomDog,
-                            max_players: 4,
-                            draw_time_seconds: 120,
-                            status: 'waiting'
-                        }])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    this.state.tournamentId = tournament.id;
-                    console.log('Lobby created:', tournament.id);
-                    
-                    return tournament;
-                } catch (err) {
-                    console.error('Error creating lobby:', err);
-                    showToast('Error creating lobby', 'error');
-                    return null;
-                }
-            },
-            
-            // Join tournament door speler toe te voegen
-async addPlayerToLobby(tournament, playerName) {
-    try {
-        // Haal huidige spelers op
-        const { data: existingPlayers } = await client
-            .from('tournament_players')
-            .select('player_slot')
-            .eq('tournament_id', tournament.id);
-
-        // Bepaal volgende slot (0, 1, 2, 3)
-        let slot = 0;
-        if (existingPlayers && existingPlayers.length > 0) {
-            const usedSlots = existingPlayers.map(p => p.player_slot);
-            while (usedSlots.includes(slot)) {
-                slot++;
-            }
-        }
-
-        // Voeg speler toe, inclusief naam
-        const { data: player, error } = await client
-            .from('tournament_players')
-            .insert([{
-                tournament_id: tournament.id,
-                player_slot: slot,
-                is_eliminated: false,
-                current_round: 1,
-                player_name: playerName
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        this.state.playerId = player.id;
-        this.state.playerName = playerName;
-        console.log('Player added:', player.id);
-
-        return player;
-    } catch (err) {
-        console.error('Error adding player:', err);
-        showToast('Error joining lobby', 'error');
-        return null;
-    }
-},
-
-            // Haal alle spelers in lobby op
-                        async getPlayersInLobby(tournamentId) {
-                try {
-                    const { data: players, error } = await client
-                        .from('tournament_players')
-                        .select('*')
-                        .eq('tournament_id', tournamentId)
-                        .order('player_slot');
-                    
-                    if (error) throw error;
-                    return players || [];
-                } catch (err) {
-                    console.error('Error fetching players:', err);
-                    return [];
-                }
-            },
-
-            // Render the lobby waiting screen
-            showLobbyUI(tournament, players) {
-                const welcome = document.getElementById('tournamentWelcome');
-                const lobby = document.getElementById('tournamentLobby');
-
-                if (!welcome || !lobby) return;
-
-                welcome.style.display = 'none';
-                lobby.style.display = 'block';
-
-                                lobby.innerHTML = `
-                    <div class="lobby-waiting">
-                        <h1>ðŸŽ® Waiting Lobby</h1>
-                        <div class="lobby-code-display">
-                            <p style="margin: 0 0 8px 0; color: var(--c-text-muted);">Lobby Code:</p>
-                            <div class="code-big">${tournament.lobby_code}</div>
-                            <p style="margin: 16px 0 0 0; font-size: 0.9rem; color: var(--c-text-muted);">
-                                Share this code with friends to let them join.
-                            </p>
-                        </div>
-
-                        <div id="lobbyCountdown" class="countdown-display" style="display:none;">
-                            Tournament starts in <span id="lobbyCountdownSeconds">180</span> seconds
-                        </div>
-
-                        <h3 style="text-align: center; margin-bottom: 16px;">
-                            Players: <span id="playerCount">1</span>/4
-                        </h3>
-                        <div class="players-grid" id="playersGrid"></div>
-
-                        <p style="text-align: center; color: var(--c-text-muted); margin-top: 24px;">
-                            â³ Waiting for players...<br>
-                            Starts automatically at 4 players or after 3 minutes.
-                        </p>
-                    </div>
-                `;
-
-                this.updatePlayersGrid(players);
-                this.startLobbyCountdown(tournament);
-
-                this.updatePlayersGrid(players);
-            },
-
-            // Update the slots display
-            updatePlayersGrid(players) {
-                const grid = document.getElementById('playersGrid');
-                const countEl = document.getElementById('playerCount');
-                if (!grid || !countEl) return;
-
-                const slots = [0, 1, 2, 3];
-                grid.innerHTML = slots.map(slot => {
-                    const player = players.find(p => p.player_slot === slot);
-                    if (player) {
-                        return `
-                            <div class="player-slot filled">
-                                <div style="font-size: 2rem; margin-bottom: 8px;">ðŸ‘¤</div>
-                                <div style="font-weight: 700;">Player ${slot + 1}</div>
-                                <div style="font-size: 0.85rem; margin-top: 4px;">Joined</div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="player-slot empty">
-                                <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.3;">ðŸ‘¤</div>
-                                <div style="font-weight: 600; color: var(--c-text-muted);">Waiting...</div>
-                            </div>
-                        `;
-                    }
-                }).join('');
-
-                countEl.textContent = players.length.toString();
-            },
-
-            // Poll for other players joining the same lobby
-                                                       startLobbyPolling() {
-    if (this.state.checkInterval) {
-        clearInterval(this.state.checkInterval);
-    }
-
-    this.state.checkInterval = setInterval(async () => {
-        if (!this.state.tournamentId) return;
-
-        const players = await this.getPlayersInLobby(this.state.tournamentId);
-        this.updatePlayersGrid(players);
-
-        // If 4 players: start immediately
-        if (players.length === 4) {
-            clearInterval(this.state.checkInterval);
-            this.state.checkInterval = null;
-            startTournamentFromLobby();
-        }
-    }, 1500);
-},
-
-
-
-
-
-                        startLobbyCountdown(tournament) {
-    const countdownEl = document.getElementById('lobbyCountdown');
-    const secondsEl = document.getElementById('lobbyCountdownSeconds');
-    if (!countdownEl || !secondsEl) return;
-
-    countdownEl.style.display = 'block';
-
-    let remaining = 180; // 3 minutes
-
-    if (this.state.lobbyCountdownInterval) {
-        clearInterval(this.state.lobbyCountdownInterval);
-    }
-
-    this.state.lobbyCountdownInterval = setInterval(async () => {
-        remaining--;
-        if (remaining < 0) remaining = 0;
-        secondsEl.textContent = remaining.toString();
-
-        if (remaining <= 0) {
-            clearInterval(this.state.lobbyCountdownInterval);
-
-            if (!this.state.tournamentId) return;
-
-            const players = await this.getPlayersInLobby(this.state.tournamentId);
-
-            if (players.length >= 2) {
-                startTournamentFromLobby();
-            } else {
-                showToast('Not enough players to start the tournament', 'error');
-            }
-        }
-    }, 1000);
-}
-
-        };
-
-
-
         // --- CONFIG & STATE ---
         const CONFIG = {
-
             width: 600,
             height: 450,
             dogs: [
@@ -1069,7 +703,7 @@ async addPlayerToLobby(tournament, playerName) {
             saveData();
             
             // UI Update
-            showToast('Vote cast! â¤ï¸', 'success');
+            showToast('Vote cast! ❤️', 'success');
             renderGallery(); // Re-render to sort
             updateGlobalStats();
         }
@@ -1089,16 +723,16 @@ async addPlayerToLobby(tournament, playerName) {
                 const isOwn = d.isLocal === true;
                 
                 let btnClass = 'can-vote';
-                let btnText = 'â¤ï¸ Vote';
+                let btnText = '❤️ Vote';
                 let btnAction = `onclick="vote(${d.id})"`;
                 
                 if (isOwn) {
                     btnClass = 'own-art';
-                    btnText = 'ðŸ‘¤ Your Art';
+                    btnText = '👤 Your Art';
                     btnAction = '';
                 } else if (isVoted) {
                     btnClass = 'voted';
-                    btnText = 'âœ… Voted';
+                    btnText = '✅ Voted';
                     btnAction = '';
                 }
 
@@ -1108,7 +742,7 @@ async addPlayerToLobby(tournament, playerName) {
                     <div class="art-info">
                         <div class="art-title">${escapeHtml(d.artist)}</div>
                         <div class="art-meta">
-                            <span>â¤ï¸ ${d.votes}</span>
+                            <span>❤️ ${d.votes}</span>
                             <span>Score: ${d.scores.total || 0}%</span>
                         </div>
                         <button class="vote-btn ${btnClass}" ${btnAction}>
@@ -1169,145 +803,19 @@ async addPlayerToLobby(tournament, playerName) {
         }
 
         // --- UTILS & HELPERS ---
-                async function startTournamentLobby() {
-            try {
-                // 1. Create lobby
-                const tournament = await LOBBY.createNewLobby();
-                if (!tournament) return;
-
-LOBBY.state.tournamentId = tournament.id;
-
-                // 2. Add this player
-                // Use artistName as player name for the tournament
-const nameInput = document.getElementById('artistName');
-const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
-
-const player = await LOBBY.addPlayerToLobby(tournament, playerName);
-
-                if (!player) return;
-
-                // 3. Show lobby UI
-                LOBBY.showLobbyUI(tournament, [player]);
-
-                // 4. Start polling for other players
-                LOBBY.startLobbyPolling();
-            } catch (err) {
-                console.error(err);
-                showToast('Error starting tournament lobby', 'error');
-            }
-        }
-        
-        async function startTournamentFromLobby() {
-    try {
-        if (!LOBBY.state.tournamentId) return;
-
-        // Load current tournament
-        const { data: tournament, error } = await client
-            .from('tournaments')
-            .select('id, status')
-            .eq('id', LOBBY.state.tournamentId)
-            .single();
-
-        if (error || !tournament) {
-            console.error(error);
-            showToast('Could not start tournament', 'error');
-            return;
-        }
-
-        // Update status to active
-        const { error: updateError } = await client
-            .from('tournaments')
-            .update({
-                status: 'active',
-                started_at: new Date().toISOString(),
-                current_round: 1
-            })
-            .eq('id', LOBBY.state.tournamentId);
-
-        if (updateError) {
-            console.error(updateError);
-            showToast('Could not start tournament', 'error');
-            return;
-        }
-
-        showToast('Tournament started!', 'success');
-        // BELANGRIJK: hier begint de tekenfase
-        beginTournamentRounds();
-    } catch (err) {
-        console.error(err);
-        showToast('Error starting tournament', 'error');
-    }
-}
-
-
-        async function joinExistingLobby() {
-            try {
-                const input = document.getElementById('joinLobbyCodeInput');
-                if (!input) return;
-
-                const code = input.value.trim().toUpperCase();
-                if (!code) {
-                    showToast('Please enter a lobby code', 'error');
-                    return;
-                }
-
-                // Find existing tournament with this code
-                const { data: tournament, error } = await client
-                    .from('tournaments')
-                    .select('*')
-                    .eq('lobby_code', code)
-                    .eq('status', 'waiting')
-                    .single();
-
-                if (error || !tournament) {
-                    console.error(error);
-                    showToast('Lobby not found or already started', 'error');
-                    return;
-                }
-
-                // Add this player
-                // Use artistName as player name for the tournament
-const nameInput = document.getElementById('artistName');
-const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
-
-const player = await LOBBY.addPlayerToLobby(tournament, playerName);
-
-                if (!player) return;
-
-                // Save state
-                LOBBY.state.tournamentId = tournament.id;
-
-                // Get all players and show lobby
-                const players = await LOBBY.getPlayersInLobby(tournament.id);
-                LOBBY.showLobbyUI(tournament, players);
-
-                // Start polling
-                LOBBY.startLobbyPolling();
-            } catch (err) {
-                console.error(err);
-                showToast('Error joining lobby', 'error');
-            }
-        }
-        
-                function activateTab(tabId) {
+        function activateTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             // Find button roughly by text content or logic, but for now simple works
-            const index = ['draw', 'gallery', 'leaderboard', 'accuracy', 'tournament'].indexOf(tabId);
+            const index = ['draw', 'gallery', 'leaderboard', 'accuracy'].indexOf(tabId);
             if(index >= 0) document.querySelectorAll('.nav-tab')[index].classList.add('active');
 
             if(tabId === 'gallery') renderGallery();
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'accuracy') renderAccuracy();
-               if (tabId === 'tournament') {
-        console.log('Tournament tab opened!');
-        loadTournamentHallOfFame();
-    }
-
         }
-
 
         function saveData() {
             localStorage.setItem('hddc_drawings', JSON.stringify(STATE.drawings));
@@ -1357,439 +865,6 @@ const player = await LOBBY.addPlayerToLobby(tournament, playerName);
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
 
-async function loadTournamentHallOfFame() {
-    const container = document.getElementById('tournamentHallOfFame');
-    const listEl = document.getElementById('tournamentHallOfFameList');
-    if (!container || !listEl) return;
-
-    const { data, error } = await client
-        .from('tournament_winners')
-        .select('*')
-        .order('completed_at', { ascending: false })
-        .limit(20);
-
-    if (error) {
-        console.error('Error loading tournament hall of fame', error);
-        return;
-    }
-
-    if (!data || data.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    listEl.innerHTML = data.map((w, index) => `
-        <div class="rank-row">
-            <div class="rank-num ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''}">
-                ${index + 1}
-            </div>
-            <div>
-                <div style="font-weight:700;">${w.winner_name || 'Anonymous winner'}</div>
-                <div style="font-size:0.85rem; color: var(--c-text-muted);">
-                    Players: ${w.player_count || '?'} â€¢ Score: ${w.final_score || '?'}
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-
-// ===== SIMPLE TOURNAMENT FLOW (USING EXISTING LOBBY) =====
-
-// Duration settings: lobby 3 minutes (180s), drawing 3 minutes (180s)
-const TOURNAMENT_DRAW_TIME_SECONDS = 180;
-
-// Simple local tournament state for this browser.
-const TOURNAMENT = {
-    currentRound: 0,
-    totalRounds: 0,
-    players: [],          // slots 0â€“3
-    finalists: [],        // 2 players in final
-    winner: null,
-    roundTimerId: null,
-    roundTimeLeft: TOURNAMENT_DRAW_TIME_SECONDS,
-    referenceDogIndex: null
-};
-
-// Start tournament once lobby is ready (called from startTournamentFromLobby)
-async function beginTournamentRounds() {
-    try {
-        // Fetch all players from Supabase for this tournament
-        const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
-        if (!players || players.length < 2) {
-            showToast('Not enough players to start rounds', 'error');
-            return;
-        }
-
-        TOURNAMENT.players = players;
-        TOURNAMENT.currentRound = 1;
-
-        // Decide flow based on number of players
-        if (players.length === 2) {
-            TOURNAMENT.totalRounds = 1; // direct final
-        } else if (players.length === 3) {
-            TOURNAMENT.totalRounds = 2; // trio, then final (top 2)
-        } else {
-            TOURNAMENT.totalRounds = 2; // 4 players: knock-out round, then final (top 2)
-        }
-
-        showTournamentDrawingRound();
-    } catch (err) {
-        console.error(err);
-        showToast('Error starting tournament rounds', 'error');
-    }
-}
-
-// Show drawing UI for the round
-function showTournamentDrawingRound() {
-    const container = document.getElementById('tournamentDrawing');
-    const welcome = document.getElementById('tournamentWelcome');
-    const lobby = document.getElementById('tournamentLobby');
-    const results = document.getElementById('tournamentResults');
-
-    if (!container) return;
-
-    // Hide other views
-    if (welcome) welcome.style.display = 'none';
-    if (lobby) lobby.style.display = 'none';
-    if (results) results.style.display = 'none';
-
-    container.style.display = 'block';
-
-    // Pick a random reference dog for this round
-    TOURNAMENT.referenceDogIndex = Math.floor(Math.random() * CONFIG.dogs.length);
-    const refDog = CONFIG.dogs[TOURNAMENT.referenceDogIndex];
-
-    // Update the main drawing tab reference selector to this dog
-    const refSelect = document.getElementById('refSelect');
-    if (refSelect) {
-        refSelect.value = TOURNAMENT.referenceDogIndex;
-        const event = new Event('change');
-        refSelect.dispatchEvent(event);
-    }
-
-    // Reset local canvas for a fresh drawing
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    saveHistory();
-
-    // Build simple UI inside #tournamentDrawing
-        // Build simple UI inside #tournamentDrawing
-    container.innerHTML = `
-        <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-            <h2 style="text-align:center; margin-bottom: 10px;">
-                ${buildTournamentRoundTitle()}
-            </h2>
-            <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 10px;">
-                Reference: <strong>${refDog.name}</strong> â€“ You have 3 minutes to draw.
-            </p>
-            <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
-                Time left: <span id="tournamentRoundCountdown">180</span> seconds
-            </p>
-            <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
-                Use the normal drawing canvas in the "Draw" tab. When the time is over, your Smart Accuracy Score (color + shape) will be used.
-            </p>
-        </div>
-    `;
-
-    // Auto-switch to Draw tab so player can draw
-    activateTab('draw');
-
-
-    // Autoâ€‘switch to Draw tab so player can draw
-    activateTab('draw');
-
-    // Start countdown
-    TOURNAMENT.roundTimeLeft = TOURNAMENT_DRAW_TIME_SECONDS;
-    if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
-    TOURNAMENT.roundTimerId = setInterval(() => {
-        TOURNAMENT.roundTimeLeft--;
-        updateTournamentRoundCountdown();
-
-        if (TOURNAMENT.roundTimeLeft <= 0) {
-            clearInterval(TOURNAMENT.roundTimerId);
-            onTournamentRoundEnd();
-        }
-    }, 1000);
-}
-
-function buildTournamentRoundTitle() {
-    const players = TOURNAMENT.players.length;
-    if (players === 2) {
-        return 'Final Round';
-    }
-    if (players === 3 && TOURNAMENT.currentRound === 1) {
-        return 'Trio Round';
-    }
-    if (players === 4 && TOURNAMENT.currentRound === 1) {
-        return 'Knock-out Round';
-    }
-    return 'Final Round';
-}
-
-function updateTournamentRoundCountdown() {
-    const span = document.getElementById('tournamentRoundCountdown');
-    if (!span) return;
-    if (TOURNAMENT.roundTimeLeft < 0) TOURNAMENT.roundTimeLeft = 0;
-    span.textContent = TOURNAMENT.roundTimeLeft.toString();
-}
-
-// Called when 3 minutes of drawing are over
-async function onTournamentRoundEnd() {
-    try {
-        // Calculate accuracy for the local canvas
-        const scores = calculateAccuracy(); // { total, color, shape }
-        const totalScore = scores.total || 0;
-
-        // Save this round score to Supabase for this player
-        if (LOBBY.state.playerId && LOBBY.state.tournamentId) {
-            await client.from('tournament_rounds').insert([{
-                tournament_id: LOBBY.state.tournamentId,
-                player_id: LOBBY.state.playerId,
-                round_index: TOURNAMENT.currentRound,
-                total_score: totalScore,
-                color_score: scores.color || 0,
-                shape_score: scores.shape || 0,
-                reference_dog_index: TOURNAMENT.referenceDogIndex
-            }]);
-        }
-
-        // Show round result and if this is the last round, show final winner.
-        await showTournamentResultsForCurrentRound();
-    } catch (err) {
-        console.error(err);
-        showToast('Error saving tournament round score', 'error');
-    }
-}
-
-async function showTournamentResultsForCurrentRound() {
-    const container = document.getElementById('tournamentResults');
-    const drawingView = document.getElementById('tournamentDrawing');
-    const welcome = document.getElementById('tournamentWelcome');
-    const lobby = document.getElementById('tournamentLobby');
-
-    if (!container) return;
-
-    if (welcome) welcome.style.display = 'none';
-    if (lobby) lobby.style.display = 'none';
-    if (drawingView) drawingView.style.display = 'none';
-
-    container.style.display = 'block';
-
-    // Load all scores for this round from Supabase
-    const { data: roundScores, error } = await client
-        .from('tournament_rounds')
-        .select('*')
-        .eq('tournament_id', LOBBY.state.tournamentId)
-        .eq('round_index', TOURNAMENT.currentRound);
-
-    if (error) {
-        console.error(error);
-        showToast('Could not load round results', 'error');
-        return;
-    }
-
-    // Merge with players
-    const playersById = {};
-    TOURNAMENT.players.forEach(p => { playersById[p.id] = p; });
-
-    const entries = (roundScores || []).map(r => {
-        return {
-            player: playersById[r.player_id],
-            total: r.total_score
-        };
-    }).filter(e => e.player);
-
-    // Sort by descending score
-    entries.sort((a, b) => b.total - a.total);
-
-    // Build HTML
-    const title = buildTournamentRoundTitle() + ' results';
-let html = `
-    <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-        <h2 style="text-align:center; margin-bottom: 16px;">${title}</h2>
-`;
-
-if (entries.length === 0) {
-    html += `<p style="text-align:center;">No scores yet.</p>`;
-} else {
-    html += `<ul style="list-style:none; padding:0;">`;
-    entries.forEach(e => {
-        const isMe = e.player.id === LOBBY.state.playerId;
-        html += `
-            <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--c-surface-alt);">
-                <span>${isMe ? 'You' : 'Player ' + (e.player.player_slot + 1)}</span>
-                <span>${e.total.toFixed(0)} points</span>
-            </li>
-        `;
-    });
-    html += `</ul>`;
-}
-
-html += `
-        <p style="text-align:center; color: var(--c-text-muted); margin-top:16px;">
-            You can go back to the main menu while the tournament prepares the next round.
-        </p>
-    </div>
-`;
-container.innerHTML = html;
-
-
-    // Decide next step
-    await decideNextTournamentStep(entries);
-}
-
-async function decideNextTournamentStep(entries) {
-    const playersCount = TOURNAMENT.players.length;
-
-    // Final already reached by round count or only 2 players total
-    if (playersCount === 2 || TOURNAMENT.currentRound === TOURNAMENT.totalRounds) {
-        await determineTournamentWinner();
-        return;
-    }
-
-    // 3 players, round 1: pick top 2 as finalists
-    if (playersCount === 3 && TOURNAMENT.currentRound === 1) {
-        TOURNAMENT.finalists = entries.slice(0, 2).map(e => e.player);
-        TOURNAMENT.players = TOURNAMENT.finalists;
-        TOURNAMENT.currentRound = 2;
-        TOURNAMENT.totalRounds = 2;
-
-        showFinalCountdownBeforeNextRound();
-        return;
-    }
-
-    // 4 players, round 1: pick top 2 as finalists
-    if (playersCount === 4 && TOURNAMENT.currentRound === 1) {
-        TOURNAMENT.finalists = entries.slice(0, 2).map(e => e.player);
-        TOURNAMENT.players = TOURNAMENT.finalists;
-        TOURNAMENT.currentRound = 2;
-        TOURNAMENT.totalRounds = 2;
-
-        showFinalCountdownBeforeNextRound();
-        return;
-    }
-
-    // Fallback: determine winner
-    await determineTournamentWinner();
-}
-
-
-function showFinalCountdownBeforeNextRound() {
-    const container = document.getElementById('tournamentResults');
-    if (!container) return;
-
-    const secondsTotal = 30;
-    let remaining = secondsTotal;
-
-    container.innerHTML += `
-        <div style="margin-top:24px; text-align:center;">
-            <h3>Final round starts soon</h3>
-            <p>Prepare for the final! Round will start in <span id="finalCountdown">${secondsTotal}</span> seconds.</p>
-        </div>
-    `;
-
-    const span = document.getElementById('finalCountdown');
-    const intervalId = setInterval(() => {
-        remaining--;
-        if (remaining < 0) remaining = 0;
-        if (span) span.textContent = remaining.toString();
-
-        if (remaining <= 0) {
-            clearInterval(intervalId);
-            showTournamentDrawingRound();
-        }
-    }, 1000);
-}
-
-
-async function determineTournamentWinner() {
-    try {
-        const container = document.getElementById('tournamentResults');
-        if (!container) return;
-
-        // Load all scores for this tournament
-        const { data: allRounds, error } = await client
-            .from('tournament_rounds')
-            .select('*')
-            .eq('tournament_id', LOBBY.state.tournamentId);
-
-        if (error) {
-            console.error(error);
-            showToast('Could not load tournament scores', 'error');
-            return;
-        }
-
-        // Sum scores per player
-        const totals = {};
-        (allRounds || []).forEach(r => {
-            if (!totals[r.player_id]) totals[r.player_id] = 0;
-            totals[r.player_id] += r.total_score;
-        });
-
-        const playersById = {};
-        TOURNAMENT.players.forEach(p => { playersById[p.id] = p; });
-
-        const entries = Object.entries(totals).map(([playerId, total]) => ({
-            player: playersById[playerId],
-            total
-        })).filter(e => e.player);
-
-        entries.sort((a, b) => b.total - a.total);
-
-        if (entries.length === 0) {
-            container.innerHTML += `
-                <p style="text-align:center; margin-top: 16px;">No scores available to determine a winner.</p>
-            `;
-            return;
-        }
-
-        const winnerEntry = entries[0];
-        TOURNAMENT.winner = winnerEntry.player;
-
-        container.innerHTML += `
-            <div style="margin-top: 24px; text-align:center;">
-                <h3>ðŸ† Final Winner</h3>
-                <p>Player ${winnerEntry.player.player_slot + 1} wins the tournament with ${winnerEntry.total.toFixed(0)} points.</p>
-                <div style="margin-top:16px;">
-                    <label style="display:block; margin-bottom:8px;">Enter your name for the Hall of Fame:</label>
-                    <input id="tournamentWinnerNameInput" class="form-control" placeholder="Your name">
-                    <button class="btn-cta" style="margin-top:12px;" onclick="saveTournamentWinnerToHallOfFame()">
-                        Add to Hall of Fame
-                    </button>
-                </div>
-            </div>
-        `;
-    } catch (err) {
-        console.error(err);
-        showToast('Error determining winner', 'error');
-    }
-}
-
-// Save Hall of Fame entry in localStorage, reusing leaderboard concept
-function saveTournamentWinnerToHallOfFame() {
-    const input = document.getElementById('tournamentWinnerNameInput');
-    if (!input) return;
-    const name = input.value.trim();
-    if (!name) {
-        showToast('Please enter a name', 'error');
-        return;
-    }
-
-    // Simple local list
-    const stored = JSON.parse(localStorage.getItem('tournamentHallOfFame') || '[]');
-    stored.push({
-        name,
-        timestamp: Date.now()
-    });
-    localStorage.setItem('tournamentHallOfFame', JSON.stringify(stored));
-
-    showToast('Added to Hall of Fame!', 'success');
-    input.value = '';
-}
-
-
         // START
         init();
 	</script>
@@ -1805,7 +880,7 @@ window.addEventListener('load', async function() {
   const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz";
 
   client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  console.log("Supabase connected! âœ…");
+  console.log("Supabase connected! ✅");
 
   // Load drawings from Supabase when page loads
   await loadDrawingsFromSupabase();
@@ -1841,7 +916,7 @@ async function publishDrawingToSupabase() {
 
     if (error) throw error;
 
-    showToast('Drawing published to Supabase! ðŸŽ‰', 'success');
+    showToast('Drawing published to Supabase! 🎉', 'success');
     titleInput.value = '';
     artistInput.value = '';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
