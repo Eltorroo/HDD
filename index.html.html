@@ -771,13 +771,15 @@ async addPlayerToLobby(tournament, playerName) {
             const players = await this.getPlayersInLobby(this.state.tournamentId);
 
             if (players.length >= 2) {
-                startTournamentFromLobby();
+                // NIET meer in de browser starten, alleen een melding
+                showToast('Lobby time over. Tournament will start when the server says so.', 'success');
             } else {
                 showToast('Not enough players to start the tournament', 'error');
             }
         }
     }, 1000);
 }
+
 
         };
 
@@ -1435,6 +1437,28 @@ async function beginTournamentRounds() {
         }
 
         showTournamentDrawingRound();
+function startTournamentCountdownFromTimestamp(startIso, durationSeconds) {
+    const span = document.getElementById('tournamentRoundCountdown');
+    if (!span) return;
+
+    function tick() {
+        const startMs = new Date(startIso).getTime();
+        const nowMs = Date.now();
+        const endMs = startMs + durationSeconds * 1000;
+        const remaining = Math.max(0, Math.floor((endMs - nowMs) / 1000));
+
+        span.textContent = remaining.toString();
+
+        if (remaining > 0) {
+            requestAnimationFrame(tick);
+        } else {
+            // Hier GEEN onTournamentRoundEnd meer automatisch.
+        }
+    }
+
+    tick();
+}
+
     } catch (err) {
         console.error(err);
         showToast('Error starting tournament rounds', 'error');
@@ -1496,6 +1520,7 @@ function showTournamentDrawingRound() {
     // Auto-switch to Draw tab so player can draw
     activateTab('draw');
 
+ctivateTab('draw')
 
     // Auto‑switch to Draw tab so player can draw
     activateTab('draw');
@@ -1503,16 +1528,7 @@ function showTournamentDrawingRound() {
     // Start countdown
     TOURNAMENT.roundTimeLeft = TOURNAMENT_DRAW_TIME_SECONDS;
     if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
-    TOURNAMENT.roundTimerId = setInterval(() => {
-        TOURNAMENT.roundTimeLeft--;
-        updateTournamentRoundCountdown();
-
-        if (TOURNAMENT.roundTimeLeft <= 0) {
-            clearInterval(TOURNAMENT.roundTimerId);
-            onTournamentRoundEnd();
-        }
-    }, 1000);
-}
+   }
 
 function buildTournamentRoundTitle() {
     const players = TOURNAMENT.players.length;
@@ -1637,8 +1653,7 @@ container.innerHTML = html;
 
 
     // Decide next step
-    await decideNextTournamentStep(entries);
-}
+    }
 
 async function decideNextTournamentStep(entries) {
     const playersCount = TOURNAMENT.players.length;
@@ -1697,9 +1712,10 @@ function showFinalCountdownBeforeNextRound() {
         if (span) span.textContent = remaining.toString();
 
         if (remaining <= 0) {
-            clearInterval(intervalId);
-            showTournamentDrawingRound();
-        }
+    clearInterval(intervalId);
+    // Niet automatisch een nieuwe ronde starten in deze browser.
+}
+
     }, 1000);
 }
 
