@@ -961,57 +961,46 @@
         }
 
         // --- SUBMIT & VOTE ---
-        // --- SUBMIT & VOTE ---
         async function vote(id) {
-            // 1. Zoek de tekening in de lokale lijst
+            // 1. Zoek de tekening
             const drawing = STATE.drawings.find(d => d.id === id);
-            
             if(!drawing) return;
 
-            // 2. Check of je al gestemd hebt (lokale check)
+            // 2. Lokale checks
             if(STATE.myVotes.has(id)) {
                 showToast('You already voted for this!', 'error');
                 return;
             }
-            // 3. Check of het je eigen tekening is
             if(drawing.isLocal) {
                 showToast('You cannot vote for your own art!', 'error');
                 return;
             }
 
-            // 4. Update de interface DIRECT (zodat het snel voelt)
+            // 3. Update het scherm DIRECT (zodat het snel voelt)
             drawing.votes++;
             STATE.myVotes.add(id);
-            saveData(); // Slaat op in localStorage dat JIJ gestemd hebt
+            saveData();
             renderGallery(); 
             updateGlobalStats();
             showToast('Vote cast! ❤️', 'success');
 
-            // 5. STUUR DE STEM NAAR SUPABASE (Dit ontbrak!)
+            // 4. Update de DATABASE (Via de veilige functie)
             try {
-                // We halen eerst de actuele stand op uit de DB om race-conditions te voorkomen
-                const { data: currentData } = await client
-                    .from('drawings')
-                    .select('votes')
-                    .eq('id', id)
-                    .single();
+                // Dit is de magische regel die de SQL functie aanroept
+                const { error } = await client.rpc('increment_vote', { row_id: id });
 
-                if (currentData) {
-                    const newCount = currentData.votes + 1;
-                    
-                    const { error } = await client
-                        .from('drawings')
-                        .update({ votes: newCount })
-                        .eq('id', id);
-
-                    if (error) console.error("Vote error:", error);
+                if (error) {
+                    console.error("Supabase Vote Error:", error);
+                    // Als het mislukt, draaien we de stem op het scherm terug
+                    drawing.votes--;
+                    STATE.myVotes.delete(id);
+                    renderGallery();
+                    showToast('Vote failed... try again', 'error');
                 }
             } catch (err) {
-                console.error("Failed to send vote to server", err);
-                // Optioneel: draai de vote terug op het scherm als het mislukt
+                console.error("Network Error:", err);
             }
         }
-
 
         // --- RENDERING ---
         function renderGallery() {
