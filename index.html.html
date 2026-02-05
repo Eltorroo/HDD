@@ -588,8 +588,7 @@
                 tournamentId: null,
                 playerId: null,
                 playerName: '',
-                checkInterval: null,
-                lobbyCountdownInterval: null
+                checkInterval: null
             },
             
             // Genereer 6-letter code
@@ -608,6 +607,8 @@
                     const lobbyCode = this.generateCode();
                     const randomDog = Math.floor(Math.random() * CONFIG.dogs.length);
                     
+                    console.log('Creating lobby:', lobbyCode);
+                    
                     const { data: tournament, error } = await client
                         .from('tournaments')
                         .insert([{
@@ -621,7 +622,10 @@
                         .single();
                     
                     if (error) throw error;
+                    
                     this.state.tournamentId = tournament.id;
+                    console.log('Lobby created:', tournament.id);
+                    
                     return tournament;
                 } catch (err) {
                     console.error('Error creating lobby:', err);
@@ -633,11 +637,13 @@
             // Join tournament door speler toe te voegen
             async addPlayerToLobby(tournament, playerName) {
                 try {
+                    // Haal huidige spelers op
                     const { data: existingPlayers } = await client
                         .from('tournament_players')
                         .select('player_slot')
                         .eq('tournament_id', tournament.id);
 
+                    // Bepaal volgende slot (0, 1, 2, 3)
                     let slot = 0;
                     if (existingPlayers && existingPlayers.length > 0) {
                         const usedSlots = existingPlayers.map(p => p.player_slot);
@@ -646,6 +652,7 @@
                         }
                     }
 
+                    // Voeg speler toe, inclusief naam
                     const { data: player, error } = await client
                         .from('tournament_players')
                         .insert([{
@@ -662,6 +669,8 @@
 
                     this.state.playerId = player.id;
                     this.state.playerName = playerName;
+                    console.log('Player added:', player.id);
+
                     return player;
                 } catch (err) {
                     console.error('Error adding player:', err);
@@ -670,6 +679,7 @@
                 }
             },
 
+            // Haal alle spelers in lobby op
             async getPlayersInLobby(tournamentId) {
                 try {
                     const { data: players, error } = await client
@@ -686,6 +696,7 @@
                 }
             },
 
+            // Render the lobby waiting screen
             showLobbyUI(tournament, players) {
                 const welcome = document.getElementById('tournamentWelcome');
                 const lobby = document.getElementById('tournamentLobby');
@@ -724,6 +735,7 @@
                 this.startLobbyCountdown(tournament);
             },
 
+            // Update the slots display
             updatePlayersGrid(players) {
                 const grid = document.getElementById('playersGrid');
                 const countEl = document.getElementById('playerCount');
@@ -753,6 +765,7 @@
                 countEl.textContent = players.length.toString();
             },
 
+            // Poll for other players joining the same lobby
             startLobbyPolling() {
                 if (this.state.checkInterval) {
                     clearInterval(this.state.checkInterval);
@@ -764,6 +777,7 @@
                     const players = await this.getPlayersInLobby(this.state.tournamentId);
                     this.updatePlayersGrid(players);
 
+                    // If 4 players: start immediately
                     if (players.length === 4) {
                         clearInterval(this.state.checkInterval);
                         this.state.checkInterval = null;
@@ -773,10 +787,12 @@
             },
 
             startLobbyCountdown(tournament) {
+                const countdownEl = document.getElementById('lobbyCountdown');
                 const secondsEl = document.getElementById('lobbyCountdownSeconds');
-                if (!secondsEl) return;
+                if (!countdownEl || !secondsEl) return;
 
-                let remaining = 180; 
+                countdownEl.style.display = 'block';
+                let remaining = 180; // 3 minutes
 
                 if (this.state.lobbyCountdownInterval) {
                     clearInterval(this.state.lobbyCountdownInterval);
@@ -789,6 +805,7 @@
 
                     if (remaining <= 0) {
                         clearInterval(this.state.lobbyCountdownInterval);
+
                         if (!this.state.tournamentId) return;
                         const players = await this.getPlayersInLobby(this.state.tournamentId);
 
@@ -803,29 +820,30 @@
             }
         };
 
-        const CONFIG = {
-            width: 600,
-            height: 450,
-            dogs: [
-                { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop' },
-                { name: 'Banana dog', url: 'https://images.unsplash.com/photo-1701445175220-1f485a27fb41?w=600&auto=format&fit=crop' },
-                { name: 'Golden', url: 'https://images.unsplash.com/photo-1510771463146-e89e6e86560e?q=80&w=627&auto=format&fit=crop' },
-                { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop' },
-                { name: 'Annoying shit', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop' },
-                { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' },
-                { name: 'BeachDawg', url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?q=80&w=688&auto=format&fit=crop' },
-                { name: 'The lovely Lab', url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=662&auto=format&fit=crop' },
-                { name: 'Grassy Dawg', url: 'https://images.unsplash.com/photo-1554456854-55a089fd4cb2?q=80&w=1170&auto=format&fit=crop' },
-                { name: 'Why so serious?', url: 'https://images.unsplash.com/photo-1566710582818-d673dc761201?q=80&w=687&auto=format&fit=crop' }
-            ]
-        };
+      // --- CONFIG & STATE ---
+const CONFIG = {
+    width: 600,
+    height: 450,
+    dogs: [
+        { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop' },
+        { name: 'Banana dog', url: 'https://images.unsplash.com/photo-1701445175220-1f485a27fb41?w=600&auto=format&fit=crop' },
+        { name: 'Golden', url: 'https://images.unsplash.com/photo-1510771463146-e89e6e86560e?q=80&w=627&auto=format&fit=crop' },
+        { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop' },
+        { name: 'Annoying shit', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop' },
+        { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' }, // <--- Komma toegevoegd
+        { name: 'BeachDawg', url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
+        { name: 'The lovely Lab', url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=662&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
+        { name: 'Grassy Dawg', url: 'https://images.unsplash.com/photo-1554456854-55a089fd4cb2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
+        { name: 'Why so serious?', url: 'https://images.unsplash.com/photo-1566710582818-d673dc761201?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' } // Laatste regel heeft geen komma nodig (mag wel)
+    ]
+};
 
         const STATE = {
             drawings: [],
             myVotes: new Set(),
             tool: 'pen',
             color: '#000000',
-            lineWidth: 3,
+lineWidth: 3,
             isDrawing: false,
             history: [],
             historyStep: -1,
@@ -833,6 +851,7 @@
             lastPos: { x: 0, y: 0 }
         };
 
+        // --- DOM ELEMENTS ---
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const refCanvas = document.getElementById('refCanvas');
@@ -840,14 +859,19 @@
         const overlayCanvas = document.getElementById('overlayCanvas');
         const overlayCtx = overlayCanvas.getContext('2d');
 
+        // --- INITIALIZATION ---
         function init() {
+            const storedDrawings = localStorage.getItem('hddc_drawings');
             const storedVotes = localStorage.getItem('hddc_votes');
+            
+            // Setup Canvas Defaults
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveHistory();
 
+            // Populate Dropdown
             const select = document.getElementById('refSelect');
             if (select) {
                 CONFIG.dogs.forEach((dog, i) => {
@@ -857,16 +881,18 @@
                     select.appendChild(opt);
                 });
             }
+            // Update Stats
             if (storedVotes) STATE.myVotes = new Set(JSON.parse(storedVotes));
         }
 
+        // --- DRAWING LOGIC ---
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            return { x: x * scaleX, y: y * scaleY };
         }
 
         function startDraw(e) {
@@ -886,10 +912,13 @@
             if(!STATE.isDrawing) return;
             e.preventDefault();
             const pos = getPos(e);
+
             ctx.beginPath();
             ctx.moveTo(STATE.lastPos.x, STATE.lastPos.y);
             ctx.lineTo(pos.x, pos.y);
             
+            ctx.strokeStyle = STATE.tool === 'eraser' ? '#FFFFFF' : STATE.color;
+            // Als het de eraser is, maken we hem iets groter dan de pen voor gemak
             if (STATE.tool === 'eraser') {
                 ctx.lineWidth = STATE.lineWidth * 2;
                 ctx.strokeStyle = '#FFFFFF';
@@ -897,6 +926,9 @@
                 ctx.lineWidth = STATE.lineWidth;
                 ctx.strokeStyle = STATE.color;
             }
+            
+            if(STATE.tool === 'eraser') ctx.strokeStyle = '#FFFFFF';
+
             ctx.stroke();
             STATE.lastPos = pos;
         }
@@ -908,6 +940,7 @@
             }
         }
 
+        // --- FLOOD FILL ---
         function floodFill(x, y, hexColor) {
             const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
             const data = imgData.data;
@@ -951,6 +984,7 @@
             return {r,g,b};
         }
 
+        // --- HISTORY ---
         function saveHistory() {
             STATE.historyStep++;
             STATE.history = STATE.history.slice(0, STATE.historyStep);
@@ -970,42 +1004,68 @@
             }
         }
 
-        const refSelectElement = document.getElementById('refSelect');
-        if (refSelectElement) {
-            refSelectElement.addEventListener('change', function(e) {
-                const val = e.target.value;
-                if(val === "") {
-                    STATE.refImage = null;
-                    refCtx.fillStyle = '#FFFFFF';
-                    refCtx.fillRect(0, 0, canvas.width, canvas.height);
-                    document.getElementById('toggleRef').disabled = true;
-                    document.getElementById('toggleRef').checked = false;
-                    document.getElementById('opacitySlider').disabled = true;
-                    updateOverlay();
-                    return;
-                }
-                const selectedIndex = parseInt(val);
-                const dog = CONFIG.dogs[selectedIndex];
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.src = dog.url;
-                img.onload = () => {
-                    STATE.refImage = img;
-                    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-                    const w = img.width * scale;
-                    const h = img.height * scale;
-                    const x = (canvas.width - w) / 2;
-                    const y = (canvas.height - h) / 2;
-                    refCtx.fillStyle = '#FFFFFF';
-                    refCtx.fillRect(0, 0, canvas.width, canvas.height);
-                    refCtx.drawImage(img, x, y, w, h);
-                    document.getElementById('toggleRef').disabled = false;
-                    document.getElementById('toggleRef').checked = true;
-                    document.getElementById('opacitySlider').disabled = false;
-                    updateOverlay();
-                };
-            });
+                            // --- VERBETERDE REFERENCE IMAGE LOGICA ---
+const refSelectElement = document.getElementById('refSelect');
+if (refSelectElement) {
+    refSelectElement.addEventListener('change', function(e) {
+        const val = e.target.value;
+        
+        // Als er geen selectie is, reset alles
+        if(val === "") {
+            STATE.refImage = null;
+            refCtx.fillStyle = '#FFFFFF';
+            refCtx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('toggleRef').disabled = true;
+            document.getElementById('toggleRef').checked = false;
+            document.getElementById('opacitySlider').disabled = true;
+            updateOverlay();
+            return;
         }
+
+        const selectedIndex = parseInt(val);
+        const dog = CONFIG.dogs[selectedIndex];
+        
+        if(!dog) return;
+        
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; // Voorkomt problemen met tekenen van externe foto's
+        img.src = dog.url;
+        
+        img.onload = () => {
+            STATE.refImage = img;
+            
+            // Bereken schaal om de hond netjes in het canvas te passen
+            const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+            const w = img.width * scale;
+            const h = img.height * scale;
+            const x = (canvas.width - w) / 2;
+            const y = (canvas.height - h) / 2;
+            
+            // Teken op de verborgen referentie canvas
+            refCtx.fillStyle = '#FFFFFF';
+            refCtx.fillRect(0, 0, canvas.width, canvas.height);
+            refCtx.drawImage(img, x, y, w, h);
+            
+            // Activeer de controls
+            const toggleRef = document.getElementById('toggleRef');
+            const opacitySlider = document.getElementById('opacitySlider');
+            
+            toggleRef.disabled = false;
+            toggleRef.checked = true; // Zet het vinkje automatisch aan
+            opacitySlider.disabled = false;
+            
+            // Update de visuele overlay direct nadat de afbeelding op refCtx staat
+            updateOverlay();
+        };
+
+        img.onerror = () => {
+            console.error('Kon afbeelding niet laden:', dog.url);
+            showToast('Kon voorbeeld-afbeelding niet laden.', 'error');
+        };
+    });
+}
+
+
 
         function updateOverlay() {
             overlayCtx.clearRect(0,0,canvas.width, canvas.height);
@@ -1016,16 +1076,22 @@
             }
         }
 
+        // --- ACCURACY ALGO ---
         function calculateAccuracy() {
             if(!STATE.refImage) return { total: 0, color: 0, shape: 0 };
+
             const dData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
             const rData = refCtx.getImageData(0,0,canvas.width,canvas.height).data;
+            
             let matchColor = 0, matchShape = 0, totalContent = 0;
+
             for(let i=0; i<dData.length; i+=16) {
                 const rR=rData[i], rG=rData[i+1], rB=rData[i+2];
                 const dR=dData[i], dG=dData[i+1], dB=dData[i+2];
+
                 const isRefContent = (rR < 250 || rG < 250 || rB < 250);
                 const isDrawContent = (dR < 250 || dG < 250 || dB < 250);
+
                 if(isRefContent) {
                     totalContent++;
                     if(isDrawContent) {
@@ -1035,41 +1101,82 @@
                     }
                 }
             }
-            if(totalContent === 0) return { total: 0, color: 0, shape: 0 };
+
+            if(totalContent === 0) return { total: 0 };
+            
             const shapeScore = (matchShape / totalContent) * 100;
             const colorScore = matchShape > 0 ? (matchColor / matchShape) * 100 : 0;
+            const total = (shapeScore * 0.6) + (colorScore * 0.4);
+
             return {
-                total: Math.round((shapeScore * 0.6) + (colorScore * 0.4)),
+                total: Math.round(total),
                 shape: Math.round(shapeScore),
                 color: Math.round(colorScore)
             };
         }
 
+        // --- SUBMIT & VOTE ---
         function vote(id) {
             const drawing = STATE.drawings.find(d => d.id === id);
+            
             if(!drawing) return;
-            if(STATE.myVotes.has(id)) { showToast('You already voted for this!', 'error'); return; }
+            if(STATE.myVotes.has(id)) {
+                showToast('You already voted for this!', 'error');
+                return;
+            }
+            if(drawing.isLocal) {
+                showToast('You cannot vote for your own art!', 'error');
+                return;
+            }
+
+            // Execute Vote (local optimistic update, real one happens via Supabase usually)
             drawing.votes++;
             STATE.myVotes.add(id);
             saveData();
             showToast('Vote cast! ❤️', 'success');
             renderGallery(); 
+            updateGlobalStats();
         }
 
+        // --- RENDERING ---
         function renderGallery() {
             const grid = document.getElementById('galleryGrid');
-            const sorted = [...STATE.drawings].sort((a, b) => b.votes - a.votes);
+            const sorted = [...STATE.drawings].sort((a, b) => {
+                if (b.votes !== a.votes) return b.votes - a.votes;
+                return b.timestamp - a.timestamp;
+            });
+
             grid.innerHTML = sorted.map(d => {
                 const isVoted = STATE.myVotes.has(d.id);
-                const btnClass = isVoted ? 'voted' : 'can-vote';
-                const btnText = isVoted ? '✅ Voted' : '❤️ Vote';
+                const isOwn = d.isLocal === true;
+                
+                let btnClass = 'can-vote';
+                let btnText = '❤️ Vote';
+                // BELANGRIJK: event.stopPropagation() zorgt dat de foto niet vergroot als je alleen wilt stemmen
+                let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
+                
+                if (isOwn) {
+                    btnClass = 'own-art';
+                    btnText = '👤 Your Art';
+                    btnAction = 'onclick="event.stopPropagation();"';
+                } else if (isVoted) {
+                    btnClass = 'voted';
+                    btnText = '✅ Voted';
+                    btnAction = 'onclick="event.stopPropagation();"';
+                }
+
                 return `
                 <div class="art-card" onclick="openModal('${d.image}', '${escapeHtml(d.artist)}')">
                     <img src="${d.image}" class="art-image" style="cursor: zoom-in;">
                     <div class="art-info">
                         <div class="art-title">${escapeHtml(d.artist)}</div>
-                        <div class="art-meta"><span>❤️ ${d.votes}</span><span>Score: ${d.scores.total || 0}%</span></div>
-                        <button class="vote-btn ${btnClass}" onclick="event.stopPropagation(); vote(${d.id})">${btnText}</button>
+                        <div class="art-meta">
+                            <span>❤️ ${d.votes}</span>
+                            <span>Score: ${d.scores.total || 0}%</span>
+                        </div>
+                        <button class="vote-btn ${btnClass}" ${btnAction}>
+                            ${btnText}
+                        </button>
                     </div>
                 </div>`;
             }).join('');
@@ -1078,13 +1185,19 @@
         function renderLeaderboard() {
             const list = document.getElementById('leaderboardList');
             const sorted = [...STATE.drawings].sort((a, b) => b.votes - a.votes).slice(0, 10);
+            
+            if(sorted.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px;">No drawings yet. Be the first!</div>';
+                return;
+            }
+
             list.innerHTML = sorted.map((d, i) => `
                 <div class="rank-row">
                     <div class="rank-num rank-${i+1}">${i+1}</div>
-                    <img src="${d.image}" style="width: 50px; height: 50px; object-fit: cover;">
+                    <img src="${d.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border:1px solid #eee;">
                     <div style="margin-left: 15px; flex: 1;">
                         <div style="font-weight:700;">${escapeHtml(d.artist)}</div>
-                        <div style="font-size:0.8rem;">${d.votes} Votes</div>
+                        <div style="font-size:0.8rem; color:#666;">${d.votes} Votes</div>
                     </div>
                 </div>
             `).join('');
@@ -1092,89 +1205,199 @@
 
         function renderAccuracy() {
             const list = document.getElementById('accuracyList');
-            const sorted = [...STATE.drawings].filter(d => d.scores.total > 0).sort((a, b) => b.scores.total - a.scores.total).slice(0, 10);
+            const sorted = [...STATE.drawings]
+                .filter(d => d.scores.total > 0)
+                .sort((a, b) => b.scores.total - a.scores.total)
+                .slice(0, 10);
+
+            if(sorted.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px;">Use a reference photo to get a Smart Score!</div>';
+                return;
+            }
+
             list.innerHTML = sorted.map((d, i) => `
                 <div class="rank-row">
                     <div class="rank-num rank-${i+1}">${i+1}</div>
-                    <img src="${d.image}" style="width: 50px; height: 50px; object-fit: cover;">
+                    <img src="${d.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border:1px solid #eee;">
                     <div style="margin-left: 15px; flex: 1;">
                         <div style="font-weight:700;">${escapeHtml(d.artist)}</div>
-                        <div style="font-size:0.8rem;">Total: ${d.scores.total}%</div>
+                        <div style="font-size:0.8rem; color:#666;">
+                            Total: <strong>${d.scores.total}%</strong> 
+                            (Color: ${d.scores.color}% | Shape: ${d.scores.shape}%)
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
+        // --- UTILS & HELPERS ---
         async function startTournamentLobby() {
             try {
+                // 1. Create lobby
                 const tournament = await LOBBY.createNewLobby();
                 if (!tournament) return;
-                const playerName = document.getElementById('artistName').value.trim() || 'Anonymous';
+
+                LOBBY.state.tournamentId = tournament.id;
+
+                // 2. Add this player
+                const nameInput = document.getElementById('artistName');
+                const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
                 const player = await LOBBY.addPlayerToLobby(tournament, playerName);
                 if (!player) return;
-                LOBBY.showLobbyUI(tournament, [player]);
-                LOBBY.startLobbyPolling();
-            } catch (err) { console.error(err); }
-        }
 
-        async function startTournamentFromLobby() {
-            if (LOBBY.state.checkInterval) clearInterval(LOBBY.state.checkInterval);
-            if (LOBBY.state.lobbyCountdownInterval) clearInterval(LOBBY.state.lobbyCountdownInterval);
+                // 3. Show lobby UI
+                LOBBY.showLobbyUI(tournament, [player]);
+
+                // 4. Start polling for other players
+                LOBBY.startLobbyPolling();
+            } catch (err) {
+                console.error(err);
+                showToast('Error starting tournament lobby', 'error');
+            }
+        }
+       async function startTournamentFromLobby() {
+            // STOP ALLE LOBBY TIMERS DIRECT (Voorkomt de herstart-glitch)
+            if (LOBBY.state.checkInterval) { 
+                clearInterval(LOBBY.state.checkInterval); 
+                LOBBY.state.checkInterval = null; 
+            }
+            if (LOBBY.state.lobbyCountdownInterval) { 
+                clearInterval(LOBBY.state.lobbyCountdownInterval); 
+                LOBBY.state.lobbyCountdownInterval = null; 
+            }
+            
+            const lobbyCountdown = document.getElementById('lobbyCountdown');
+            if (lobbyCountdown) lobbyCountdown.style.display = 'none';
+
             try {
+                if (!LOBBY.state.tournamentId) return;
+
                 const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
                 TOURNAMENT.players = players;
+
+                const { data: tournament, error } = await client
+                    .from('tournaments')
+                    .select('id, status')
+                    .eq('id', LOBBY.state.tournamentId)
+                    .single();
+
+                if (error || !tournament) {
+                    showToast('Could not start tournament', 'error');
+                    return;
+                }
+
                 const nowIso = new Date().toISOString();
-                await client.from('tournaments').update({ status: 'active', started_at: nowIso, current_round: 1, round_started_at: nowIso }).eq('id', LOBBY.state.tournamentId);
+                const { error: updateError } = await client
+                    .from('tournaments')
+                    .update({
+                        status: 'active',
+                        started_at: nowIso,
+                        current_round: 1,
+                        round_started_at: nowIso
+                    })
+                    .eq('id', LOBBY.state.tournamentId);
+
+if (updateError) throw updateError;
+
+                showToast('Tournament started!', 'success');
                 beginTournamentRounds(); 
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                showToast('Error starting tournament', 'error');
+            }
         }
 
         async function joinExistingLobby() {
             try {
-                const code = document.getElementById('joinLobbyCodeInput').value.trim().toUpperCase();
-                const { data: tournament } = await client.from('tournaments').select('*').eq('lobby_code', code).eq('status', 'waiting').single();
-                if (!tournament) return showToast('Lobby not found', 'error');
-                const playerName = document.getElementById('artistName').value.trim() || 'Anonymous';
+                const input = document.getElementById('joinLobbyCodeInput');
+                if (!input) return;
+
+                const code = input.value.trim().toUpperCase();
+                if (!code) {
+                    showToast('Please enter a lobby code', 'error');
+                    return;
+                }
+
+                // Find existing tournament with this code
+                const { data: tournament, error } = await client
+                    .from('tournaments')
+                    .select('*')
+                    .eq('lobby_code', code)
+                    .eq('status', 'waiting')
+                    .single();
+
+                if (error || !tournament) {
+                    console.error(error);
+                    showToast('Lobby not found or already started', 'error');
+                    return;
+                }
+
+                // Add this player
+                const nameInput = document.getElementById('artistName');
+                const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+
                 const player = await LOBBY.addPlayerToLobby(tournament, playerName);
                 if (!player) return;
+
+                // Save state
                 LOBBY.state.tournamentId = tournament.id;
+
+                // Get all players and show lobby
                 const players = await LOBBY.getPlayersInLobby(tournament.id);
                 LOBBY.showLobbyUI(tournament, players);
+
+                // Start polling
                 LOBBY.startLobbyPolling();
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                showToast('Error joining lobby', 'error');
+            }
         }
         
         function activateTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
+            
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            const index = ['draw', 'gallery', 'leaderboard', 'accuracy', 'tournament'].indexOf(tabId);
+            if(index >= 0) document.querySelectorAll('.nav-tab')[index].classList.add('active');
+
             if(tabId === 'gallery') renderGallery();
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'accuracy') renderAccuracy();
-            if (tabId === 'tournament') loadTournamentHallOfFame();
+            if (tabId === 'tournament') {
+                console.log('Tournament tab opened!');
+                loadTournamentHallOfFame();
+            }
         }
+function openModal(imgSrc, artistName) {
+    const modal = document.getElementById('artModal');
+    const modalImg = document.getElementById('modalImg');
+    const captionText = document.getElementById('modalCaption');
+    
+    modal.style.display = "block";
+    modalImg.src = imgSrc;
+    captionText.innerHTML = "By: " + artistName;
+    
+    // Voorkom scrollen van de achtergrond
+    document.body.style.overflow = 'hidden';
+}
 
-        function openModal(imgSrc, artistName) {
-            const modal = document.getElementById('artModal');
-            document.getElementById('modalImg').src = imgSrc;
-            document.getElementById('modalCaption').innerHTML = "By: " + artistName;
-            modal.style.display = "block";
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            document.getElementById('artModal').style.display = "none";
-            document.body.style.overflow = 'auto';
-        }
-
+function closeModal() {
+    document.getElementById('artModal').style.display = "none";
+    document.body.style.overflow = 'auto';
+}
         function saveData() {
+            localStorage.setItem('hddc_drawings', JSON.stringify(STATE.drawings));
             localStorage.setItem('hddc_votes', JSON.stringify([...STATE.myVotes]));
             updateGlobalStats();
         }
 
         function updateGlobalStats() {
             document.getElementById('statTotalDrawings').textContent = STATE.drawings.length;
-            document.getElementById('statTotalVotes').textContent = STATE.drawings.reduce((sum, d) => sum + d.votes, 0);
+            const totalVotes = STATE.drawings.reduce((sum, d) => sum + d.votes, 0);
+            document.getElementById('statTotalVotes').textContent = totalVotes;
         }
 
         function showToast(msg, type) {
@@ -1190,6 +1413,7 @@
             return div.innerHTML;
         }
 
+        // --- EVENT BINDINGS (Short) ---
         ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, startDraw));
         ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, moveDraw));
         ['mouseup', 'touchend'].forEach(evt => window.addEventListener(evt, endDraw));
@@ -1197,9 +1421,10 @@
         document.getElementById('btnUndo').onclick = undo;
         document.getElementById('btnClear').onclick = () => { ctx.fillRect(0,0,canvas.width,canvas.height); saveHistory(); };
         
+        // Tool Buttons
         const tools = { btnPen: 'pen', btnBrush: 'brush', btnEraser: 'eraser', btnFill: 'fill' };
         Object.keys(tools).forEach(id => {
-            document.getElementById(id).onclick = () => {
+            document.getElementById(id).onclick = (e) => {
                 document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                 document.getElementById(id).classList.add('active');
                 STATE.tool = tools[id];
@@ -1207,116 +1432,480 @@
         });
 
         document.getElementById('colorPicker').onchange = (e) => STATE.color = e.target.value;
-        document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.target.value;
+document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.target.value;
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
 
         async function loadTournamentHallOfFame() {
-            const { data } = await client.from('tournament_winners').select('*').order('completed_at', { ascending: false }).limit(20);
-            if (data) {
-                document.getElementById('tournamentHallOfFame').style.display = 'block';
-                document.getElementById('tournamentHallOfFameList').innerHTML = data.map((w, i) => `<div class="rank-row"><div class="rank-num">${i+1}</div><div>${escapeHtml(w.winner_name)} - ${w.final_score}pts</div></div>`).join('');
+            const container = document.getElementById('tournamentHallOfFame');
+            const listEl = document.getElementById('tournamentHallOfFameList');
+            if (!container || !listEl) return;
+
+            const { data, error } = await client
+                .from('tournament_winners')
+                .select('*')
+                .order('completed_at', { ascending: false })
+                .limit(20);
+
+            if (error) {
+                console.error('Error loading tournament hall of fame', error);
+                return;
             }
+
+            if (!data || data.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            listEl.innerHTML = data.map((w, index) => `
+                <div class="rank-row">
+                    <div class="rank-num ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''}">
+                        ${index + 1}
+                    </div>
+                    <div>
+                        <div style="font-weight:700;">${w.winner_name || 'Anonymous winner'}</div>
+                        <div style="font-size:0.85rem; color: var(--c-text-muted);">
+                            Players: ${w.player_count || '?'} • Score: ${w.final_score || '?'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        const TOURNAMENT_DRAW_TIME_SECONDS = 180;
-        const TOURNAMENT = { currentRound: 0, players: [], roundTimerId: null, referenceDogIndex: null };
 
+        // ===== SIMPLE TOURNAMENT FLOW =====
+        const TOURNAMENT_DRAW_TIME_SECONDS = 180;
+        const TOURNAMENT = {
+            currentRound: 0,
+            totalRounds: 0,
+            players: [],          
+            finalists: [],        
+            winner: null,
+            roundTimerId: null,
+            roundTimeLeft: TOURNAMENT_DRAW_TIME_SECONDS,
+            referenceDogIndex: null
+        };
+
+        // NIEUWE FUNCTIE: Start de rondes
         function beginTournamentRounds() {
             TOURNAMENT.currentRound = 1;
+            // Als er meer dan 2 spelers zijn, doen we 2 rondes, anders 1
+            const pCount = TOURNAMENT.players.length || 2; 
+            TOURNAMENT.totalRounds = pCount > 2 ? 2 : 1;
+            
             showTournamentDrawingRound();
         }
 
-        async function showTournamentDrawingRound() {
-            document.getElementById('tournamentWelcome').style.display = 'none';
-            document.getElementById('tournamentLobby').style.display = 'none';
-            document.getElementById('tournamentDrawing').style.display = 'block';
+        // Show drawing UI for the round
+        function showTournamentDrawingRound() {
+            const container = document.getElementById('tournamentDrawing');
+            const welcome = document.getElementById('tournamentWelcome');
+            const lobby = document.getElementById('tournamentLobby');
+            const results = document.getElementById('tournamentResults');
+
+            if (!container) return;
+
+            if (welcome) welcome.style.display = 'none';
+            if (lobby) lobby.style.display = 'none';
+            if (results) results.style.display = 'none';
+
+            container.style.display = 'block';
+
             TOURNAMENT.referenceDogIndex = Math.floor(Math.random() * CONFIG.dogs.length);
-            document.getElementById('refSelect').value = TOURNAMENT.referenceDogIndex;
-            document.getElementById('refSelect').dispatchEvent(new Event('change'));
+            const refDog = CONFIG.dogs[TOURNAMENT.referenceDogIndex];
+
+            const refSelect = document.getElementById('refSelect');
+            if (refSelect) {
+                refSelect.value = TOURNAMENT.referenceDogIndex;
+                const event = new Event('change');
+                refSelect.dispatchEvent(event);
+            }
+
+            // Reset canvas
+            ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveHistory();
+
+            container.innerHTML = `
+                <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center; margin-bottom: 10px;">
+                        ${buildTournamentRoundTitle()}
+                    </h2>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 10px;">
+                        Reference: <strong>${refDog.name}</strong> – You have 3 minutes to draw.
+                    </p>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
+                        Time left: <span id="tournamentRoundCountdown">180</span> seconds
+                    </p>
+                    <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
+                        Use the normal drawing canvas in the "Draw" tab.
+                    </p>
+                </div>
+            `;
+
             activateTab('draw');
-            const { data: state } = await client.from('tournaments').select('*').eq('id', LOBBY.state.tournamentId).single();
-            startTournamentCountdownFromTimestamp(state.round_started_at || new Date().toISOString(), TOURNAMENT_DRAW_TIME_SECONDS);
+
+            // Start countdown from server time
+            loadTournamentState().then(state => {
+                if (!state || !state.round_started_at) {
+                    // Fallback als server tijd faalt
+                    startTournamentCountdownFromTimestamp(new Date().toISOString(), TOURNAMENT_DRAW_TIME_SECONDS);
+                    return;
+                }
+                const duration = state.draw_time_seconds || TOURNAMENT_DRAW_TIME_SECONDS;
+                startTournamentCountdownFromTimestamp(state.round_started_at, duration);
+            });
         }
 
-        function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
+        // NIEUWE FUNCTIE: Haal state op
+        async function loadTournamentState() {
+            try {
+                const { data } = await client
+                    .from('tournaments')
+                    .select('*')
+                    .eq('id', LOBBY.state.tournamentId)
+                    .single();
+                return data;
+            } catch (e) { return null; }
+        }
+
+        // NIEUWE FUNCTIE: Timer logica
+      function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
+            const countdownEl = document.getElementById('tournamentRoundCountdown');
+            const statusHeader = document.getElementById('tournamentStatusHeader');
+            const roundNameEl = document.getElementById('tournamentRoundName');
+            const timeDisplayEl = document.getElementById('tournamentTimeDisplay');
+            
             const startTime = new Date(startTimeIso).getTime();
             const endTime = startTime + (durationSeconds * 1000);
+
             if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
-            document.getElementById('tournamentStatusHeader').style.display = 'block';
+
+            // Toon de header op de tekenpagina
+            if (statusHeader) statusHeader.style.display = 'block';
+            if (roundNameEl) roundNameEl.textContent = TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2 ? 'Kwalificatie' : 'Finale';
+
             TOURNAMENT.roundTimerId = setInterval(() => {
-                const leftSec = Math.ceil((endTime - Date.now()) / 1000);
-                document.getElementById('tournamentTimeDisplay').textContent = `${Math.floor(leftSec/60)}:${(leftSec%60).toString().padStart(2, '0')}`;
+                const now = Date.now();
+                const leftMs = endTime - now;
+                let leftSec = Math.ceil(leftMs / 1000);
+
+                if (leftSec < 0) leftSec = 0;
+
+                // Update beide timers (in de tab en in de header)
+                if (countdownEl) countdownEl.textContent = leftSec;
+                if (timeDisplayEl) {
+                    const mins = Math.floor(leftSec / 60);
+                    const secs = leftSec % 60;
+                    timeDisplayEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                }
+
+                TOURNAMENT.roundTimeLeft = leftSec;
+
                 if (leftSec <= 0) {
                     clearInterval(TOURNAMENT.roundTimerId);
-                    document.getElementById('tournamentStatusHeader').style.display = 'none';
+                    if (statusHeader) statusHeader.style.display = 'none';
+                    showToast('Tijd is om! Score wordt berekend...', 'info');
                     onTournamentRoundEnd();
                 }
             }, 1000);
         }
 
-        async function onTournamentRoundEnd() {
-            const scores = calculateAccuracy();
-            if (LOBBY.state.playerId) {
-                await client.from('tournament_rounds').insert([{
-                    tournament_id: LOBBY.state.tournamentId, player_id: LOBBY.state.playerId, round_index: TOURNAMENT.currentRound,
-                    total_score: scores.total, color_score: scores.color, shape_score: scores.shape, reference_dog_index: TOURNAMENT.referenceDogIndex
-                }]);
+        function buildTournamentRoundTitle() {
+            const players = TOURNAMENT.players.length;
+            if (players === 2) return 'Final Round';
+            if (players > 2 && TOURNAMENT.currentRound === 1) return 'Knock-out Round';
+            return 'Final Round';
+        }
+
+        // Called when 3 minutes of drawing are over
+async function onTournamentRoundEnd() {
+            // 1. Toon een grote melding over het hele scherm
+            const overlay = document.createElement('div');
+            overlay.id = "roundEndOverlay";
+            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;";
+            overlay.innerHTML = `<h1 style="font-size:4rem; margin-bottom:20px; animation: bounce 0.5s infinite;">⌛ TIJD IS OM!</h1><p style="font-size:1.5rem;">De jury beoordeelt je werk...</p>`;
+            document.body.appendChild(overlay);
+
+            // 2. Wacht 3 seconden en wissel dan pas naar de uitslag
+            setTimeout(() => {
+                const el = document.getElementById('roundEndOverlay');
+                if(el) el.remove();
+                activateTab('tournament');
+            }, 3000);
+
+            try {
+                const scores = calculateAccuracy();                const totalScore = scores.total || 0;
+
+                if (LOBBY.state.playerId && LOBBY.state.tournamentId) {
+                    await client.from('tournament_rounds').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        player_id: LOBBY.state.playerId,
+                        round_index: TOURNAMENT.currentRound,
+                        total_score: totalScore,
+                        color_score: scores.color || 0,
+                        shape_score: scores.shape || 0,
+                        reference_dog_index: TOURNAMENT.referenceDogIndex
+                    }]);
+                }
+
+                await showTournamentResultsForCurrentRound();
+            } catch (err) {
+                console.error(err);
+                showToast('Error saving tournament round score', 'error');
             }
-            showTournamentResultsForCurrentRound();
         }
 
         async function showTournamentResultsForCurrentRound() {
-            activateTab('tournament');
-            document.getElementById('tournamentDrawing').style.display = 'none';
-            document.getElementById('tournamentResults').style.display = 'block';
+            const container = document.getElementById('tournamentResults');
+            const drawingView = document.getElementById('tournamentDrawing');
+            
+            if (!container) return;
+            if (drawingView) drawingView.style.display = 'none';
+            container.style.display = 'block';
+
+            showToast('Resultaten ophalen...', 'info');
+            // Wacht 4 seconden zodat iedereen de kans heeft om te uploaden
             await new Promise(r => setTimeout(r, 4000));
-            const { data: roundScores } = await client.from('tournament_rounds').select('*, tournament_players(player_name)').eq('tournament_id', LOBBY.state.tournamentId).eq('round_index', TOURNAMENT.currentRound);
-            const sorted = (roundScores || []).sort((a, b) => b.total_score - a.total_score);
-            document.getElementById('tournamentResults').innerHTML = `<div class="drawing-card"><h2>Results</h2>${sorted.map(s => `<div>${s.tournament_players.player_name}: ${s.total_score}</div>`).join('')}<button class="btn-cta" onclick="determineTournamentWinner()">Finish</button></div>`;
-        }
 
-        async function determineTournamentWinner() {
-            const { data: allRounds } = await client.from('tournament_rounds').select('*, tournament_players(player_name)').eq('tournament_id', LOBBY.state.tournamentId);
-            const scoreboard = Object.values(allRounds.reduce((acc, r) => {
-                acc[r.player_id] = acc[r.player_id] || { name: r.tournament_players.player_name, score: 0, id: r.player_id };
-                acc[r.player_id].score += r.total_score;
-                return acc;
-            }, {})).sort((a, b) => b.score - a.score);
-            const winner = scoreboard[0];
-            if (LOBBY.state.playerId === winner.id) {
-                await client.from('tournament_winners').insert([{ tournament_id: LOBBY.state.tournamentId, winner_name: winner.name, final_score: winner.score, player_count: scoreboard.length }]);
+            const { data: roundScores, error } = await client
+                .from('tournament_rounds')
+                .select('*, tournament_players(player_name)')
+                .eq('tournament_id', LOBBY.state.tournamentId)
+                .eq('round_index', TOURNAMENT.currentRound);
+
+            if (error) {
+                showToast('Fout bij laden resultaten', 'error');
+                return;
             }
-            alert("Winner is " + winner.name);
-            location.reload();
+
+            const entries = (roundScores || []).sort((a, b) => b.total_score - a.total_score);
+
+            let html = `
+                <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center; margin-bottom: 8px;">
+                        Tussenstand: ${TOURNAMENT.currentRound === 1 ? 'Kwalificatie' : 'Finale'}
+                    </h2>
+                    <p style="text-align:center; color:var(--c-text-muted); margin-bottom: 20px;">
+                        Gedetailleerd overzicht van de jury-scores
+                    </p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width:100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--c-surface-alt); color: var(--c-text-muted); font-size: 0.85rem;">
+                                    <th style="padding: 12px 8px;">#</th>
+                                    <th style="padding: 12px 8px;">SPELER</th>
+                                    <th style="padding: 12px 8px;">VORM</th>
+                                    <th style="padding: 12px 8px;">KLEUR</th>
+                                    <th style="padding: 12px 8px;">TOTAAL</th>
+                                    <th style="padding: 12px 8px;">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            entries.forEach((entry, index) => {
+                const isMe = entry.player_id === LOBBY.state.playerId;
+                const playerName = entry.tournament_players?.player_name || 'Anoniem';
+                
+                let statusBadge = "";
+                if (TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2) {
+                    statusBadge = index < 2 
+                        ? '<span style="color:var(--c-accent-teal); font-weight:bold;">✅ FINALIST</span>' 
+                        : '<span style="color:var(--c-accent-rose);">❌ AFGEVALLEN</span>';
+                } else {
+                    statusBadge = index === 0 ? '🏆 WINNAAR' : '🥈 2e PLEK';
+                }
+
+                html += `
+                    <tr style="border-bottom: 1px solid var(--c-surface-alt); ${isMe ? 'background:#FFF7ED; font-weight:bold;' : ''}">
+                        <td style="padding: 12px 8px;">${index + 1}</td>
+                        <td style="padding: 12px 8px;">${escapeHtml(playerName)} ${isMe ? '(Jij)' : ''}</td>
+                        <td style="padding: 12px 8px;">${entry.shape_score}%</td>
+                        <td style="padding: 12px 8px;">${entry.color_score}%</td>
+                        <td style="padding: 12px 8px; font-size: 1.1rem; color: var(--c-primary);">${entry.total_score.toFixed(0)}</td>
+                        <td style="padding: 12px 8px; font-size: 0.8rem;">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+
+           html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+
+            if (TOURNAMENT.currentRound < TOURNAMENT.totalRounds) {
+                setTimeout(() => {
+                    TOURNAMENT.currentRound++;
+                    showTournamentDrawingRound();
+                }, 8000);
+            } else {
+                setTimeout(() => {
+                    determineTournamentWinner();
+                }, 4000);
+            }
+        }
+                 
+    
+     async function determineTournamentWinner() {
+            try {
+                const container = document.getElementById('tournamentResults');
+                if (!container) return;
+
+                const { data: allRounds, error } = await client
+                    .from('tournament_rounds')
+                    .select('*, tournament_players(player_name)')
+                    .eq('tournament_id', LOBBY.state.tournamentId);
+
+                if (error || !allRounds) return;
+
+                const totals = {};
+                allRounds.forEach(r => {
+                    const pid = r.player_id;
+                    if (!totals[pid]) {
+                        totals[pid] = { name: r.tournament_players?.player_name || 'Onbekend', score: 0, id: pid };
+                    }
+                    totals[pid].score += r.total_score;
+                });
+
+                const scoreboard = Object.values(totals).sort((a, b) => b.score - a.score);
+                const winner = scoreboard[0];
+                
+                // --- FIX: Vraag om naam als deze leeg is voor de Hall of Fame ---
+                let finalName = document.getElementById('artistName').value.trim();
+                if (LOBBY.state.playerId === winner.id && (!finalName || finalName === 'Anonymous')) {
+                    const promptedName = prompt("🏆 GEFELICITEERD! Je hebt gewonnen! Vul je naam in voor de Hall of Fame:", "");
+                    finalName = promptedName ? promptedName.trim() : "Anonieme Legende";
+                    document.getElementById('artistName').value = finalName;
+                } else {
+                    finalName = winner.name;
+                }
+
+                const card = container.querySelector('.drawing-card');
+                card.innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        <div style="font-size: 4rem;">🏆</div>
+                        <h2 style="color:var(--c-primary);">TOERNOOI WINNAAR</h2>
+                        <h1 style="font-size: 3rem; margin: 10px 0;">${escapeHtml(finalName)}</h1>
+                        <p style="font-size: 1.2rem;">Eindscore: <strong>${winner.score.toFixed(0)}</strong> punten</p>
+                        <hr style="margin: 20px 0; opacity: 0.2;">
+                        <button class="btn-cta" onclick="location.reload()">Verlaat Toernooi</button>
+                    </div>
+                `;
+
+                if (LOBBY.state.playerId === winner.id) {
+                    await client.from('tournament_winners').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        winner_name: finalName,
+                        final_score: winner.score,
+                        player_count: scoreboard.length
+                    }]);
+                    showToast('Je staat in de Hall of Fame! 🐾', 'success');
+                }
+
+            } catch (err) {
+                console.error("Fout bij bepalen winnaar:", err);
+            }
         }
 
-        function downloadCanvasImage() {
-            const link = document.createElement('a');
-            link.download = 'dog-art.png';
-            link.href = document.getElementById('modalImg').src;
-            link.click();
-        }
+        // START
 
-        window.addEventListener('load', async () => {
-            init();
+// --- DOWNLOAD FUNCTIE VOOR DE MODAL ---
+function downloadCanvasImage() {
+    const img = document.getElementById('modalImg');
+    if (!img || !img.src) {
+        showToast('Geen afbeelding gevonden om te downloaden', 'error');
+        return;
+    }
+    
+    const link = document.createElement('a');
+    link.download = 'honden-kunstwerk.png';
+    link.href = img.src;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Tekening wordt gedownload...', 'success');
+}
+        init();
+
+        // Load drawings from Supabase when page loads
+        window.addEventListener('load', async function() {
             await loadDrawingsFromSupabase();
-            document.getElementById('btnSubmit').onclick = publishDrawingToSupabase;
+            document.getElementById('btnSubmit').addEventListener('click', publishDrawingToSupabase);
         });
 
         async function publishDrawingToSupabase() {
-            const title = document.getElementById('dogTitle').value;
-            const artist = document.getElementById('artistName').value;
-            if(!title || !artist) return alert('Fill info');
-            const { error } = await client.from('drawings').insert([{ title, artist_name: artist, image_data: canvas.toDataURL(), scores: calculateAccuracy(), votes: 0 }]);
-            if(!error) { showToast('Published!', 'success'); loadDrawingsFromSupabase(); }
+            const titleInput = document.getElementById('dogTitle');
+            const artistInput = document.getElementById('artistName');
+
+            const title = titleInput.value.trim();
+            const artist = artistInput.value.trim();
+            const imageData = canvas.toDataURL();
+            const scores = calculateAccuracy();
+
+            if (!title || !artist) {
+                alert('Please fill in title and artist name!');
+                return;
+            }
+
+            try {
+                const { data, error } = await client
+                .from('drawings')
+                .insert([{ 
+                    title: title, 
+                    artist_name: artist, 
+                    image_data: imageData,
+                    scores: scores,
+                    votes: 0 
+                }]);
+
+                if (error) throw error;
+
+                showToast('Drawing published to Supabase! 🎉', 'success');
+                titleInput.value = '';
+                artistInput.value = '';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                STATE.history = [];
+                STATE.historyStep = -1;
+
+                await loadDrawingsFromSupabase();
+                renderGallery();
+            } catch (err) {
+                console.error('Error publishing:', err);
+                showToast('Error saving to Supabase!', 'error');
+            }
         }
 
         async function loadDrawingsFromSupabase() {
-            const { data } = await client.from('drawings').select('*').order('votes', { ascending: false });
-            if (data) STATE.drawings = data.map(d => ({ id: d.id, artist: d.artist_name, image: d.image_data, votes: d.votes, scores: d.scores || {total:0}, isLocal: false }));
-            updateGlobalStats();
+            try {
+                const { data, error } = await client
+                .from('drawings')
+                .select('*')
+                .order('votes', { ascending: false });
+
+                if (error) throw error;
+
+                STATE.drawings = data.map(d => ({
+                    id: d.id,
+                    artist: d.artist_name,
+                    image: d.image_data,
+                    votes: d.votes,
+                    scores: d.scores || { total: 0, color: 0, shape: 0 },
+                    timestamp: new Date(d.created_at).getTime(),
+                    isLocal: false
+                }));
+
+                console.log('Loaded', STATE.drawings.length, 'drawings from Supabase');
+            } catch (err) {
+                console.error('Error loading drawings:', err);
+            }
         }
     </script>
 </body>
