@@ -923,43 +923,74 @@
 
         // --- ACCURACY ALGO ---
         function calculateAccuracy() {
+            // 1. Veiligheidscheck: is er wel een referentiefoto?
             if(!STATE.refImage) return { total: 0, color: 0, shape: 0 };
 
+            // Haal de pixeldata op van de tekening (dData) en de referentie (rData)
             const dData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
             const rData = refCtx.getImageData(0,0,canvas.width,canvas.height).data;
             
-            let matchColor = 0, matchShape = 0, totalContent = 0;
-
+            let correctPixels = 0;   // Goed: juiste plek + juiste kleur
+            let wrongPixels = 0;     // Fout: getekend maar verkeerde kleur/plek
+            let totalRefPixels = 0;  // Totaal aantal pixels in de foto (die niet wit zijn)
+            
+            // We scannen het canvas (stapgrootte 16 voor snelheid)
             for(let i=0; i<dData.length; i+=16) {
-                const rR=rData[i], rG=rData[i+1], rB=rData[i+2];
-                const dR=dData[i], dG=dData[i+1], dB=dData[i+2];
+                const rR=rData[i], rG=rData[i+1], rB=rData[i+2]; // Referentie Kleur
+                const dR=dData[i], dG=dData[i+1], dB=dData[i+2]; // Getekende Kleur
 
+                // Check: is de referentie hier GEEN wit/leeg? (We nemen aan dat wit = leeg)
                 const isRefContent = (rR < 250 || rG < 250 || rB < 250);
-                const isDrawContent = (dR < 250 || dG < 250 || dB < 250);
+                
+                // Check: heb jij hier getekend? (Niet wit)
+                const isDrawn = (dR < 250 || dG < 250 || dB < 250);
 
-                if(isRefContent) {
-                    totalContent++;
-                    if(isDrawContent) {
-                        matchShape++;
+                if (isRefContent) {
+                    totalRefPixels++; // Dit telt mee voor de max score
+                    
+                    if (isDrawn) {
+                        // Bereken het kleurverschil
                         const diff = Math.abs(rR-dR) + Math.abs(rG-dG) + Math.abs(rB-dB);
-                        if(diff < 100) matchColor++;
+                        
+                        // STRENGHEID: Verschil moet klein zijn (onder de 100)
+                        if (diff < 100) {
+                            correctPixels++; 
+                        } else {
+                            // Wel getekend, maar verkeerde kleur -> Strafpunt!
+                            wrongPixels++;
+                        }
+                    }
+                } else {
+                    // Hier is niks op de foto, maar jij tekende wel -> Strafpunt!
+                    if (isDrawn) {
+                        wrongPixels++;
                     }
                 }
             }
 
-            if(totalContent === 0) return { total: 0 };
+            if(totalRefPixels === 0) return { total: 0, color: 0, shape: 0 };
+
+            // --- DE PUNTENTELLING ---
             
-            const shapeScore = (matchShape / totalContent) * 100;
-            const colorScore = matchShape > 0 ? (matchColor / matchShape) * 100 : 0;
-            const total = (shapeScore * 0.6) + (colorScore * 0.4);
+            // Basis Score: Hoeveel % van de foto heb je correct ingevuld?
+            let rawScore = (correctPixels / totalRefPixels) * 100;
+
+            // Straf: Foute pixels trekken de score omlaag
+            // Factor 40 zorgt dat flink kladderen pijn doet
+            const penalty = (wrongPixels / totalRefPixels) * 40; 
+
+            // Eindscore
+            let totalScore = rawScore - penalty;
+            totalScore = Math.max(0, totalScore); // Niet lager dan 0
 
             return {
-                total: Math.round(total),
-                shape: Math.round(shapeScore),
-                color: Math.round(colorScore)
+                total: Math.round(totalScore),
+                // Shape is nu gelijk aan totaal, want vorm en kleur zijn 1 geheel
+                shape: Math.round(totalScore), 
+                // Color is een indicatie van netheid (verhouding goed vs fout)
+                color: Math.round((correctPixels / (correctPixels + wrongPixels || 1)) * 100)
             };
         }
-
         // --- SUBMIT & VOTE ---
         async function vote(id) {
             // 1. Zoek de tekening
