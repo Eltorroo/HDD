@@ -1400,14 +1400,23 @@
                 if (!countdownEl || !secondsEl) return;
 
                 countdownEl.style.display = 'block';
-                let remaining = 180; // 3 minutes
+                
+                // --- SYNC FIX START ---
+                // We use the server creation time so everyone ends at the exact same second.
+                const startTime = new Date(tournament.created_at).getTime();
+                const durationMs = 180 * 1000; // 3 minutes in ms
+                const targetEndTime = startTime + durationMs;
+                // --- SYNC FIX END ---
 
                 if (this.state.lobbyCountdownInterval) {
                     clearInterval(this.state.lobbyCountdownInterval);
                 }
 
                 this.state.lobbyCountdownInterval = setInterval(async () => {
-                    remaining--;
+                    // Calculate remaining seconds based on NOW vs TARGET
+                    const now = Date.now();
+                    let remaining = Math.ceil((targetEndTime - now) / 1000);
+
                     if (remaining < 0) remaining = 0;
                     secondsEl.textContent = remaining.toString();
 
