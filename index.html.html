@@ -579,7 +579,7 @@
 </div>    <div id="toast" class="toast"></div>
 
     <script>
-        // Initialiseer client global
+        // Initialise client global
         const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
         const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz";
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -593,7 +593,7 @@
                 checkInterval: null
             },
             
-            // Genereer 6-letter code
+            // Generate 6-letter code
             generateCode() {
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
                 let code = '';
@@ -603,7 +603,7 @@
                 return code;
             },
             
-            // Start nieuw tournament
+            // Start new tournament
             async createNewLobby() {
                 try {
                     const lobbyCode = this.generateCode();
@@ -636,16 +636,16 @@
                 }
             },
             
-            // Join tournament door speler toe te voegen
+            // Join tournament by adding player
             async addPlayerToLobby(tournament, playerName) {
                 try {
-                    // Haal huidige spelers op
+                    // Fetch current players
                     const { data: existingPlayers } = await client
                         .from('tournament_players')
                         .select('player_slot')
                         .eq('tournament_id', tournament.id);
 
-                    // Bepaal volgende slot (0, 1, 2, 3)
+                    // Determine next slot (0, 1, 2, 3)
                     let slot = 0;
                     if (existingPlayers && existingPlayers.length > 0) {
                         const usedSlots = existingPlayers.map(p => p.player_slot);
@@ -654,7 +654,7 @@
                         }
                     }
 
-                    // Voeg speler toe, inclusief naam
+                    // Add player, including name
                     const { data: player, error } = await client
                         .from('tournament_players')
                         .insert([{
@@ -681,7 +681,7 @@
                 }
             },
 
-            // Haal alle spelers in lobby op
+            // Fetch all players in lobby
             async getPlayersInLobby(tournamentId) {
                 try {
                     const { data: players, error } = await client
@@ -832,11 +832,11 @@ const CONFIG = {
         { name: 'Golden', url: 'https://images.unsplash.com/photo-1510771463146-e89e6e86560e?q=80&w=627&auto=format&fit=crop' },
         { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop' },
         { name: 'Annoying shit', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop' },
-        { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' }, // <--- Komma toegevoegd
-        { name: 'BeachDawg', url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
-        { name: 'The lovely Lab', url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=662&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
-        { name: 'Grassy Dawg', url: 'https://images.unsplash.com/photo-1554456854-55a089fd4cb2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }, // <--- Komma toegevoegd
-        { name: 'Why so serious?', url: 'https://images.unsplash.com/photo-1566710582818-d673dc761201?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' } // Laatste regel heeft geen komma nodig (mag wel)
+        { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' },
+        { name: 'BeachDawg', url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+        { name: 'The lovely Lab', url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=662&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+        { name: 'Grassy Dawg', url: 'https://images.unsplash.com/photo-1554456854-55a089fd4cb2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+        { name: 'Why so serious?', url: 'https://images.unsplash.com/photo-1566710582818-d673dc761201?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }
     ]
 };
 
@@ -920,7 +920,7 @@ lineWidth: 3,
             ctx.lineTo(pos.x, pos.y);
             
             ctx.strokeStyle = STATE.tool === 'eraser' ? '#FFFFFF' : STATE.color;
-            // Als het de eraser is, maken we hem iets groter dan de pen voor gemak
+            // Eraser is slightly larger
             if (STATE.tool === 'eraser') {
                 ctx.lineWidth = STATE.lineWidth * 2;
                 ctx.strokeStyle = '#FFFFFF';
@@ -1006,13 +1006,13 @@ lineWidth: 3,
             }
         }
 
-                            // --- VERBETERDE REFERENCE IMAGE LOGICA ---
+                            // --- REFERENCE IMAGE LOGIC ---
 const refSelectElement = document.getElementById('refSelect');
 if (refSelectElement) {
     refSelectElement.addEventListener('change', function(e) {
         const val = e.target.value;
         
-        // Als er geen selectie is, reset alles
+        // Reset if no selection
         if(val === "") {
             STATE.refImage = null;
             refCtx.fillStyle = '#FFFFFF';
@@ -1030,39 +1030,37 @@ if (refSelectElement) {
         if(!dog) return;
         
         const img = new Image();
-        img.crossOrigin = "Anonymous"; // Voorkomt problemen met tekenen van externe foto's
+        img.crossOrigin = "Anonymous"; 
         img.src = dog.url;
         
         img.onload = () => {
             STATE.refImage = img;
             
-            // Bereken schaal om de hond netjes in het canvas te passen
+            // Scale dog image to canvas
             const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
             const w = img.width * scale;
             const h = img.height * scale;
             const x = (canvas.width - w) / 2;
             const y = (canvas.height - h) / 2;
             
-            // Teken op de verborgen referentie canvas
             refCtx.fillStyle = '#FFFFFF';
             refCtx.fillRect(0, 0, canvas.width, canvas.height);
             refCtx.drawImage(img, x, y, w, h);
             
-            // Activeer de controls
+            // Activate controls
             const toggleRef = document.getElementById('toggleRef');
             const opacitySlider = document.getElementById('opacitySlider');
             
             toggleRef.disabled = false;
-            toggleRef.checked = true; // Zet het vinkje automatisch aan
+            toggleRef.checked = true; 
             opacitySlider.disabled = false;
             
-            // Update de visuele overlay direct nadat de afbeelding op refCtx staat
             updateOverlay();
         };
 
         img.onerror = () => {
-            console.error('Kon afbeelding niet laden:', dog.url);
-            showToast('Kon voorbeeld-afbeelding niet laden.', 'error');
+            console.error('Could not load image:', dog.url);
+            showToast('Could not load reference image.', 'error');
         };
     });
 }
@@ -1131,7 +1129,6 @@ if (refSelectElement) {
                 return;
             }
 
-            // Execute Vote (local optimistic update, real one happens via Supabase usually)
             drawing.votes++;
             STATE.myVotes.add(id);
             saveData();
@@ -1154,7 +1151,6 @@ if (refSelectElement) {
                 
                 let btnClass = 'can-vote';
                 let btnText = '❤️ Vote';
-                // BELANGRIJK: event.stopPropagation() zorgt dat de foto niet vergroot als je alleen wilt stemmen
                 let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
                 
                 if (isOwn) {
@@ -1241,7 +1237,7 @@ if (refSelectElement) {
         showToast('Enter your dawg name', 'error');
         return;
     }
-// Sync de naam naar de andere tab
+
     LOBBY.state.playerName = playerName;
     document.getElementById('artistName').value = playerName;
 
@@ -1261,7 +1257,7 @@ if (refSelectElement) {
     }
 }
        async function startTournamentFromLobby() {
-            // STOP ALLE LOBBY TIMERS DIRECT (Voorkomt de herstart-glitch)
+            // Stop lobby timers
             if (LOBBY.state.checkInterval) { 
                 clearInterval(LOBBY.state.checkInterval); 
                 LOBBY.state.checkInterval = null; 
@@ -1317,10 +1313,9 @@ if (updateError) throw updateError;
     const playerName = nameInput ? nameInput.value.trim() : '';
     
     if (!playerName || playerName === '' || playerName === 'Anonymous') {
-        showToast('Vul eerst je artiestennaam in!', 'error');
+        showToast('Please fill in your artist name first!', 'error');
         return;
     }
-// Sync de naam naar de andere tab
     LOBBY.state.playerName = playerName;
     document.getElementById('artistName').value = playerName;    
 
@@ -1330,7 +1325,7 @@ if (updateError) throw updateError;
 
         const code = input.value.trim().toUpperCase();
         if (!code) {
-            showToast('Voer een lobbycode in', 'error');
+            showToast('Enter a lobby code', 'error');
             return;
         }
 
@@ -1371,7 +1366,6 @@ if (updateError) throw updateError;
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'accuracy') renderAccuracy();
             if (tabId === 'tournament') {
-                console.log('Tournament tab opened!');
                 loadTournamentHallOfFame();
             }
         }
@@ -1384,7 +1378,6 @@ function openModal(imgSrc, artistName) {
     modalImg.src = imgSrc;
     captionText.innerHTML = "By: " + artistName;
     
-    // Voorkom scrollen van de achtergrond
     document.body.style.overflow = 'hidden';
 }
 
@@ -1417,7 +1410,7 @@ function closeModal() {
             return div.innerHTML;
         }
 
-        // --- EVENT BINDINGS (Short) ---
+        // --- EVENT BINDINGS ---
         ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, startDraw));
         ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, moveDraw));
         ['mouseup', 'touchend'].forEach(evt => window.addEventListener(evt, endDraw));
@@ -1425,7 +1418,6 @@ function closeModal() {
         document.getElementById('btnUndo').onclick = undo;
         document.getElementById('btnClear').onclick = () => { ctx.fillRect(0,0,canvas.width,canvas.height); saveHistory(); };
         
-        // Tool Buttons
         const tools = { btnPen: 'pen', btnBrush: 'brush', btnEraser: 'eraser', btnFill: 'fill' };
         Object.keys(tools).forEach(id => {
             document.getElementById(id).onclick = (e) => {
@@ -1491,17 +1483,14 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
             referenceDogIndex: null
         };
 
-        // NIEUWE FUNCTIE: Start de rondes
         function beginTournamentRounds() {
             TOURNAMENT.currentRound = 1;
-            // Als er meer dan 2 spelers zijn, doen we 2 rondes, anders 1
             const pCount = TOURNAMENT.players.length || 2; 
             TOURNAMENT.totalRounds = pCount > 2 ? 2 : 1;
             
             showTournamentDrawingRound();
         }
 
-        // Show drawing UI for the round
         function showTournamentDrawingRound() {
             const container = document.getElementById('tournamentDrawing');
             const welcome = document.getElementById('tournamentWelcome');
@@ -1543,17 +1532,15 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
                         Time left: <span id="tournamentRoundCountdown">180</span> seconds
                     </p>
                     <p style="text-align:center; color: var(--c-text-muted); margin-bottom: 20px;">
-                        Use the normal drawing canvas in the "Draw" tab.
+                        Use the drawing canvas in the "Draw" tab.
                     </p>
                 </div>
             `;
 
             activateTab('draw');
 
-            // Start countdown from server time
             loadTournamentState().then(state => {
                 if (!state || !state.round_started_at) {
-                    // Fallback als server tijd faalt
                     startTournamentCountdownFromTimestamp(new Date().toISOString(), TOURNAMENT_DRAW_TIME_SECONDS);
                     return;
                 }
@@ -1562,7 +1549,6 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
             });
         }
 
-        // NIEUWE FUNCTIE: Haal state op
         async function loadTournamentState() {
             try {
                 const { data } = await client
@@ -1574,7 +1560,6 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
             } catch (e) { return null; }
         }
 
-        // NIEUWE FUNCTIE: Timer logica
       function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
             const countdownEl = document.getElementById('tournamentRoundCountdown');
             const statusHeader = document.getElementById('tournamentStatusHeader');
@@ -1586,9 +1571,8 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
 
             if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
 
-            // Toon de header op de tekenpagina
             if (statusHeader) statusHeader.style.display = 'block';
-            if (roundNameEl) roundNameEl.textContent = TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2 ? 'Kwalified' : 'Final';
+            if (roundNameEl) roundNameEl.textContent = TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2 ? 'Qualification' : 'Final';
 
             TOURNAMENT.roundTimerId = setInterval(() => {
                 const now = Date.now();
@@ -1597,7 +1581,6 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
 
                 if (leftSec < 0) leftSec = 0;
 
-                // Update beide timers (in de tab en in de header)
                 if (countdownEl) countdownEl.textContent = leftSec;
                 if (timeDisplayEl) {
                     const mins = Math.floor(leftSec / 60);
@@ -1623,16 +1606,13 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
             return 'Final Round';
         }
 
-        // Called when 3 minutes of drawing are over
 async function onTournamentRoundEnd() {
-            // 1. Toon een grote melding over het hele scherm
             const overlay = document.createElement('div');
             overlay.id = "roundEndOverlay";
             overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;";
-            overlay.innerHTML = `<h1 style="font-size:4rem; margin-bottom:20px; animation: bounce 0.5s infinite;">⌛ TIMES UP!</h1><p style="font-size:1.5rem;">A dawg is examing your work...</p>`;
+            overlay.innerHTML = `<h1 style="font-size:4rem; margin-bottom:20px; animation: bounce 0.5s infinite;">⌛ TIMES UP!</h1><p style="font-size:1.5rem;">A dawg is examining your work...</p>`;
             document.body.appendChild(overlay);
 
-            // 2. Wacht 3 seconden en wissel dan pas naar de uitslag
             setTimeout(() => {
                 const el = document.getElementById('roundEndOverlay');
                 if(el) el.remove();
@@ -1670,7 +1650,6 @@ async function onTournamentRoundEnd() {
             container.style.display = 'block';
 
             showToast('retrieving results...', 'info');
-            // Wacht 4 seconden zodat iedereen de kans heeft om te uploaden
             await new Promise(r => setTimeout(r, 4000));
 
             const { data: roundScores, error } = await client
@@ -1680,7 +1659,7 @@ async function onTournamentRoundEnd() {
                 .eq('round_index', TOURNAMENT.currentRound);
 
             if (error) {
-                showToast('Fout bij laden resultaten', 'error');
+                showToast('Error loading results', 'error');
                 return;
             }
 
@@ -1700,9 +1679,9 @@ async function onTournamentRoundEnd() {
                             <thead>
                                 <tr style="border-bottom: 2px solid var(--c-surface-alt); color: var(--c-text-muted); font-size: 0.85rem;">
                                     <th style="padding: 12px 8px;">#</th>
-                                    <th style="padding: 12px 8px;">player</th>
-                                    <th style="padding: 12px 8px;">shape</th>
-                                    <th style="padding: 12px 8px;">colour</th>
+                                    <th style="padding: 12px 8px;">Player</th>
+                                    <th style="padding: 12px 8px;">Shape</th>
+                                    <th style="padding: 12px 8px;">Color</th>
                                     <th style="padding: 12px 8px;">TOTAL</th>
                                     <th style="padding: 12px 8px;">STATUS</th>
                                 </tr>
@@ -1712,7 +1691,7 @@ async function onTournamentRoundEnd() {
 
             entries.forEach((entry, index) => {
                 const isMe = entry.player_id === LOBBY.state.playerId;
-                const playerName = entry.tournament_players?.player_name || 'Anoniem';
+                const playerName = entry.tournament_players?.player_name || 'Unknown';
                 
                 let statusBadge = "";
                 if (TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2) {
@@ -1720,7 +1699,7 @@ async function onTournamentRoundEnd() {
                         ? '<span style="color:var(--c-accent-teal); font-weight:bold;">✅ FINALIST</span>' 
                         : '<span style="color:var(--c-accent-rose);">❌ Next time better, big dawg</span>';
                 } else {
-                    statusBadge = index === 0 ? '🏆 WINNAAR' : '🥈 2nd DAWG';
+                    statusBadge = index === 0 ? '🏆 WINNER' : '🥈 2nd DAWG';
                 }
 
                 html += `
@@ -1747,15 +1726,13 @@ async function onTournamentRoundEnd() {
            const totalRoundsNeeded = TOURNAMENT.players.length > 2 ? 2 : 1;
 
             if (TOURNAMENT.currentRound < totalRoundsNeeded) {
-                // Filter de top 2 spelers
                 const finalists = entries.slice(0, 2).map(e => e.player_id);
                 const amIFinalist = finalists.includes(LOBBY.state.playerId);
 
                 if (amIFinalist) {
-                    showToast('Congrats big dawg!  You reached the final!', 'good luck');
+                    showToast('Congrats big dawg! You reached the final!', 'success');
                     setTimeout(async () => {
                         TOURNAMENT.currentRound++;
-                        // Alleen de host (of eerste speler) hoeft de status in DB te updaten
                         await client.from('tournaments')
                             .update({ 
                                 current_round: TOURNAMENT.currentRound, 
@@ -1765,14 +1742,13 @@ async function onTournamentRoundEnd() {
                         showTournamentDrawingRound();
                     }, 8000);
                 } else {
-                    // Speler is geëlimineerd
                     setTimeout(() => {
                         container.innerHTML = `
                             <div class="drawing-card" style="text-align:center; padding:40px;">
                                 <div style="font-size: 4rem;">😢</div>
-                                <h2>Helaas...</h2>
-                                <p>Je score was niet hoog genoeg voor de finale. Volgende keer beter!</p>
-                                <button class="btn-cta" onclick="location.reload()" style="margin-top:20px;">Leave tournament</button>
+                                <h2>Unlucky...</h2>
+                                <p>Your score wasn't high enough for the final. Better luck next time!</p>
+                                <button class="btn-cta" onclick="location.reload()" style="margin-top:20px;">Leave Tournament</button>
                             </div>
                         `;
                     }, 8000);
@@ -1783,7 +1759,7 @@ async function onTournamentRoundEnd() {
                     determineTournamentWinner();
                 }, 5000);
          }    
-        } // Einde showTournamentResultsForCurrentRound
+        } 
 
         async function determineTournamentWinner() {
             try {
@@ -1801,7 +1777,7 @@ async function onTournamentRoundEnd() {
                 allRounds.forEach(r => {
                     const pid = r.player_id;
                     if (!totals[pid]) {
-                        totals[pid] = { name: r.tournament_players?.player_name || 'Onbekend', score: 0, id: pid };
+                        totals[pid] = { name: r.tournament_players?.player_name || 'Unknown', score: 0, id: pid };
                     }
                     totals[pid].score += (Number(r.total_score) || 0);
                 });
@@ -1811,7 +1787,7 @@ async function onTournamentRoundEnd() {
                 
                 let finalName = document.getElementById('artistName').value.trim();
                 if (LOBBY.state.playerId === winner.id && (!finalName || finalName === 'Anonymous')) {
-                    const promptedName = prompt("🏆 Wow you won, you are a real dog drawer! enter your name in the Hall of Fame:", "");
+                    const promptedName = prompt("🏆 Wow you won, you are a real dog drawer! Enter your name in the Hall of Fame:", "");
                     finalName = promptedName ? promptedName.trim() : "Anonymous Legend";
                     document.getElementById('artistName').value = finalName;
                 } else {
@@ -1825,9 +1801,9 @@ async function onTournamentRoundEnd() {
                         <div style="font-size: 4rem;">🏆</div>
                         <h2 style="color:var(--c-primary);">TOURNAMENT WINNER</h2>
                         <h1 style="font-size: 3rem; margin: 10px 0;">${escapeHtml(finalName)}</h1>
-                        <p style="font-size: 1.2rem;">Final result: <strong>${winner.score.toFixed(0)}</strong> punten</p>
+                        <p style="font-size: 1.2rem;">Final result: <strong>${winner.score.toFixed(0)}</strong> points</p>
                         <hr style="margin: 20px 0; opacity: 0.2;">
-                        <button class="btn-cta" onclick="location.reload()">Verlaat Toernooi</button>
+                        <button class="btn-cta" onclick="location.reload()">Leave Tournament</button>
                     </div>
                 `;
 
@@ -1841,31 +1817,29 @@ async function onTournamentRoundEnd() {
                     showToast('You reached the Hall of Fame! 🐾', 'success');
                 }
             } catch (err) {
-                console.error("Fout bij bepalen winnaar:", err);
+                console.error("Error determining winner:", err);
             }
         }
-        // START
 
-// --- DOWNLOAD FUNCTIE VOOR DE MODAL ---
+// --- DOWNLOAD FUNCTION FOR MODAL ---
 function downloadCanvasImage() {
     const img = document.getElementById('modalImg');
     if (!img || !img.src) {
-        showToast('Geen afbeelding gevonden om te downloaden', 'error');
+        showToast('No image found to download', 'error');
         return;
     }
     
     const link = document.createElement('a');
-    link.download = 'honden-kunstwerk.png';
+    link.download = 'dog-masterpiece.png';
     link.href = img.src;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    showToast('Tekening wordt gedownload...', 'success');
+    showToast('Downloading drawing...', 'success');
 }
         init();
 
-        // Load drawings from Supabase when page loads
         window.addEventListener('load', async function() {
             await loadDrawingsFromSupabase();
             document.getElementById('btnSubmit').addEventListener('click', publishDrawingToSupabase);
