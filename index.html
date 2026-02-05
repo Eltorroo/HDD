@@ -589,25 +589,25 @@
         const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
         const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz"; // Note: Ensure this is your public key
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-       // --- CONFIG & STATE ---
+// --- CONFIG & STATE ---
         const CONFIG = {
             width: 600,
             height: 450,
             dogs: [
                 { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop' },
-                { name: 'I don't know', url: 'https://i.imgur.com/HQLadRP.jpeg' },
-                  { name: 'Side eye', url: 'https://i.imgur.com/beATevY.jpeg' },
+                { name: 'I don\'t know', url: 'https://i.imgur.com/HQLadRP.jpeg' },
+                { name: 'Side eye', url: 'https://i.imgur.com/beATevY.jpeg' },
                 { name: 'Banana dog', url: 'https://images.unsplash.com/photo-1701445175220-1f485a27fb41?w=600&auto=format&fit=crop' },
                 { name: 'Me after a big night out', url: 'https://i.imgur.com/jMb90Nw.png' },
                 { name: 'Fluff', url: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=687&auto=format&fit=crop' },
-                 { name: 'Thug', url: 'https://i.imgur.com/8hkxbUv.png' },
+                { name: 'Thug', url: 'https://i.imgur.com/8hkxbUv.png' },
                 { name: 'Annoying shit', url: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=688&auto=format&fit=crop' },
                 { name: 'Murica', url: 'https://images.unsplash.com/photo-1422565096762-bdb997a56a84?q=80&w=1470&auto=format&fit=crop' },
                 { name: 'The mrs', url: 'https://i.imgur.com/ku6rbCA.jpeg' },
                 { name: 'HDD sellers once we hit 10MM', url: 'https://i.imgur.com/il8TKhA.jpeg' },
-                { name: 'Twister', url: ':https://imgur.com/f466f1c7-3a3c-4c31-adb3-d1493dfd2be4' },
-                { name: 'Why so serious?', url: 'blob:https://imgur.com/09097cc5-2e96-4e0a-9865-d0d18671c292' }
+                // Let op: De link hieronder werkt waarschijnlijk niet (geen .jpg/.png), maar de syntax is nu wel geldig:
+                { name: 'Twister', url: 'https://imgur.com/f466f1c7-3a3c-4c31-adb3-d1493dfd2be4' },
+                { name: 'Why so serious?', url: 'https://images.unsplash.com/photo-1566710582818-d673dc761201?q=80&w=687&auto=format&fit=crop' }
             ]
         };
         const STATE = {
