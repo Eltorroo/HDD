@@ -450,6 +450,11 @@
                 <button class="tool-btn" id="btnFill" title="Fill">🪣</button>
                 <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
                 <input type="color" id="colorPicker" value="#000000" style="height: 44px; width: 44px; padding: 0; border: none; cursor: pointer;">
+<div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+    <span style="font-size: 0.7rem; font-weight: bold; color: var(--c-text-muted);">SIZE</span>
+    <input type="range" id="sizeSlider" min="1" max="50" value="3" style="width: 80px; cursor: pointer;">
+</div>
                 <div style="width: 1px; background: #ddd; margin: 0 8px;"></div>
                 <button class="tool-btn" id="btnUndo" title="Undo">↶</button>
                 <button class="tool-btn" id="btnClear" title="Clear">🗑️</button>
@@ -458,6 +463,9 @@
             <div class="canvas-wrapper">
                 <canvas id="refCanvas" width="600" height="450" style="position: absolute; pointer-events: none; opacity: 0;"></canvas>
                 <canvas id="overlayCanvas" width="600" height="450" style="position: absolute; pointer-events: none; top:0; left:0;"></canvas>
+<div id="tournamentStatusHeader" style="display:none; width:100%; background:var(--c-primary); color:white; padding:10px; border-radius:8px 8px 0 0; text-align:center; font-weight:bold; margin-bottom:-4px;">
+    🏆 TOERNOOI MODUS: <span id="tournamentRoundName">Ronde 1</span> - <span id="tournamentTimeDisplay">03:00</span>
+</div>
                 <canvas id="drawCanvas" width="600" height="450"></canvas>
             </div>
 
@@ -559,10 +567,14 @@
     </div>
 <div id="artModal" class="art-modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
-    <img class="modal-content" id="modalImg">
+    <img class="modal-content" id="modalImg" onclick="event.stopPropagation()">
     <div id="modalCaption" class="modal-caption"></div>
-</div>
-    <div id="toast" class="toast"></div>
+    <div style="text-align:center; margin-top: 10px;">
+        <button class="btn-cta" id="downloadArtBtn" onclick="event.stopPropagation(); downloadCanvasImage();" style="padding: 10px 20px; font-size: 0.9rem; background: var(--c-accent-teal);">
+            💾 Download Tekening
+        </button>
+    </div>
+</div>    <div id="toast" class="toast"></div>
 
     <script>
         // Initialiseer client global
@@ -833,6 +845,7 @@ const CONFIG = {
             myVotes: new Set(),
             tool: 'pen',
             color: '#000000',
+lineWidth: 3,
             isDrawing: false,
             history: [],
             historyStep: -1,
@@ -907,7 +920,14 @@ const CONFIG = {
             ctx.lineTo(pos.x, pos.y);
             
             ctx.strokeStyle = STATE.tool === 'eraser' ? '#FFFFFF' : STATE.color;
-            ctx.lineWidth = STATE.tool === 'pen' ? 3 : STATE.tool === 'brush' ? 8 : 20; 
+            // Als het de eraser is, maken we hem iets groter dan de pen voor gemak
+            if (STATE.tool === 'eraser') {
+                ctx.lineWidth = STATE.lineWidth * 2;
+                ctx.strokeStyle = '#FFFFFF';
+            } else {
+                ctx.lineWidth = STATE.lineWidth;
+                ctx.strokeStyle = STATE.color;
+            }
             
             if(STATE.tool === 'eraser') ctx.strokeStyle = '#FFFFFF';
 
@@ -1413,6 +1433,7 @@ function closeModal() {
         });
 
         document.getElementById('colorPicker').onchange = (e) => STATE.color = e.target.value;
+document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.target.value;
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
 
@@ -1551,12 +1572,20 @@ function closeModal() {
         }
 
         // NIEUWE FUNCTIE: Timer logica
-        function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
+      function startTournamentCountdownFromTimestamp(startTimeIso, durationSeconds) {
             const countdownEl = document.getElementById('tournamentRoundCountdown');
+            const statusHeader = document.getElementById('tournamentStatusHeader');
+            const roundNameEl = document.getElementById('tournamentRoundName');
+            const timeDisplayEl = document.getElementById('tournamentTimeDisplay');
+            
             const startTime = new Date(startTimeIso).getTime();
             const endTime = startTime + (durationSeconds * 1000);
 
             if (TOURNAMENT.roundTimerId) clearInterval(TOURNAMENT.roundTimerId);
+
+            // Toon de header op de tekenpagina
+            if (statusHeader) statusHeader.style.display = 'block';
+            if (roundNameEl) roundNameEl.textContent = TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2 ? 'Kwalificatie' : 'Finale';
 
             TOURNAMENT.roundTimerId = setInterval(() => {
                 const now = Date.now();
@@ -1565,12 +1594,20 @@ function closeModal() {
 
                 if (leftSec < 0) leftSec = 0;
 
+                // Update beide timers (in de tab en in de header)
                 if (countdownEl) countdownEl.textContent = leftSec;
+                if (timeDisplayEl) {
+                    const mins = Math.floor(leftSec / 60);
+                    const secs = leftSec % 60;
+                    timeDisplayEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                }
+
                 TOURNAMENT.roundTimeLeft = leftSec;
 
                 if (leftSec <= 0) {
                     clearInterval(TOURNAMENT.roundTimerId);
-                    showToast('Time is up! Calculating scores...', 'info');
+                    if (statusHeader) statusHeader.style.display = 'none';
+                    showToast('Tijd is om! Score wordt berekend...', 'info');
                     onTournamentRoundEnd();
                 }
             }, 1000);
@@ -1616,108 +1653,110 @@ function closeModal() {
             if (drawingView) drawingView.style.display = 'none';
             container.style.display = 'block';
 
-            // Wait a bit for other players data
-            showToast('Waiting for opponent scores...', 'info');
-            await new Promise(r => setTimeout(r, 2000));
+            showToast('Resultaten ophalen...', 'info');
+            // Wacht 4 seconden zodat iedereen de kans heeft om te uploaden
+            await new Promise(r => setTimeout(r, 4000));
 
             const { data: roundScores, error } = await client
                 .from('tournament_rounds')
-                .select('*')
+                .select('*, tournament_players(player_name)')
                 .eq('tournament_id', LOBBY.state.tournamentId)
                 .eq('round_index', TOURNAMENT.currentRound);
 
             if (error) {
-                showToast('Could not load round results', 'error');
+                showToast('Fout bij laden resultaten', 'error');
                 return;
             }
 
-            const playersById = {};
-            TOURNAMENT.players.forEach(p => { playersById[p.id] = p; });
+            const entries = (roundScores || []).sort((a, b) => b.total_score - a.total_score);
 
-            const entries = (roundScores || []).map(r => {
-                return {
-                    player: playersById[r.player_id],
-                    total: r.total_score
-                };
-            }).filter(e => e.player);
-
-            entries.sort((a, b) => b.total - a.total);
-
-            const title = buildTournamentRoundTitle() + ' results';
             let html = `
                 <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
-                    <h2 style="text-align:center; margin-bottom: 16px;">${title}</h2>
+                    <h2 style="text-align:center; margin-bottom: 8px;">
+                        Tussenstand: ${TOURNAMENT.currentRound === 1 ? 'Kwalificatie' : 'Finale'}
+                    </h2>
+                    <p style="text-align:center; color:var(--c-text-muted); margin-bottom: 20px;">
+                        Gedetailleerd overzicht van de jury-scores
+                    </p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width:100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--c-surface-alt); color: var(--c-text-muted); font-size: 0.85rem;">
+                                    <th style="padding: 12px 8px;">#</th>
+                                    <th style="padding: 12px 8px;">SPELER</th>
+                                    <th style="padding: 12px 8px;">VORM</th>
+                                    <th style="padding: 12px 8px;">KLEUR</th>
+                                    <th style="padding: 12px 8px;">TOTAAL</th>
+                                    <th style="padding: 12px 8px;">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
             `;
 
-            if (entries.length === 0) {
-                html += `<p style="text-align:center;">No scores yet.</p>`;
-            } else {
-                html += `<ul style="list-style:none; padding:0;">`;
-                entries.forEach(e => {
-                    const isMe = e.player.id === LOBBY.state.playerId;
-                    html += `
-                        <li style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--c-surface-alt);">
-                            <span>${isMe ? 'You' : escapeHtml(e.player.player_name)}</span>
-                            <span>${e.total.toFixed(0)} points</span>
-                        </li>
-                    `;
-                });
-                html += `</ul>`;
-            }
+            entries.forEach((entry, index) => {
+                const isMe = entry.player_id === LOBBY.state.playerId;
+                const playerName = entry.tournament_players?.player_name || 'Anoniem';
+                
+                let statusBadge = "";
+                if (TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2) {
+                    statusBadge = index < 2 
+                        ? '<span style="color:var(--c-accent-teal); font-weight:bold;">✅ FINALIST</span>' 
+                        : '<span style="color:var(--c-accent-rose);">❌ AFGEVALLEN</span>';
+                } else {
+                    statusBadge = index === 0 ? '🏆 WINNAAR' : '🥈 2e PLEK';
+                }
 
-            html += `</div>`;
+                html += `
+                    <tr style="border-bottom: 1px solid var(--c-surface-alt); ${isMe ? 'background:#FFF7ED; font-weight:bold;' : ''}">
+                        <td style="padding: 12px 8px;">${index + 1}</td>
+                        <td style="padding: 12px 8px;">${escapeHtml(playerName)} ${isMe ? '(Jij)' : ''}</td>
+                        <td style="padding: 12px 8px;">${entry.shape_score}%</td>
+                        <td style="padding: 12px 8px;">${entry.color_score}%</td>
+                        <td style="padding: 12px 8px; font-size: 1.1rem; color: var(--c-primary);">${entry.total_score.toFixed(0)}</td>
+                        <td style="padding: 12px 8px; font-size: 0.8rem;">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
             container.innerHTML = html;
 
-            decideNextTournamentStep(entries);
-        }
+            // Logica voor de overgang naar finale of einde
+            if (TOURNAMENT.currentRound === 1 && entries.length > 2) {
+                const finalistsIds = entries.slice(0, 2).map(e => e.player_id);
+                const amIFinalist = finalistsIds.includes(LOBBY.state.playerId);
 
-        async function decideNextTournamentStep(entries) {
-            const playersCount = TOURNAMENT.players.length;
-
-            if (playersCount === 2 || TOURNAMENT.currentRound === TOURNAMENT.totalRounds) {
-                await determineTournamentWinner();
-                return;
-            }
-
-            if (playersCount > 2 && TOURNAMENT.currentRound === 1) {
-                TOURNAMENT.finalists = entries.slice(0, 2).map(e => e.player);
-                TOURNAMENT.players = TOURNAMENT.finalists; // Update players to just finalists
-                TOURNAMENT.currentRound = 2;
-                TOURNAMENT.totalRounds = 2;
-
-                showFinalCountdownBeforeNextRound();
-                return;
-            }
-
-            await determineTournamentWinner();
-        }
-
-        function showFinalCountdownBeforeNextRound() {
-            const container = document.getElementById('tournamentResults');
-            if (!container) return;
-
-            const secondsTotal = 15;
-            let remaining = secondsTotal;
-
-            const div = document.createElement('div');
-            div.style.textAlign = 'center';
-            div.style.marginTop = '24px';
-            div.innerHTML = `<h3>Final round starts soon</h3><p>Start in <span id="finalCountdown">${secondsTotal}</span> seconds.</p>`;
-            container.querySelector('.drawing-card').appendChild(div);
-
-            const span = document.getElementById('finalCountdown');
-            const intervalId = setInterval(() => {
-                remaining--;
-                if (remaining < 0) remaining = 0;
-                if (span) span.textContent = remaining.toString();
-
-                if (remaining <= 0) {
-                    clearInterval(intervalId);
-                    showTournamentDrawingRound(); // Start next round
+                if (amIFinalist) {
+                    container.innerHTML += `<p style="text-align:center; margin-top:20px; font-weight:bold; color:var(--c-accent-teal);">Gefeliciteerd! Je gaat door naar de finale. De volgende ronde start over 10 seconden...</p>`;
+                    setTimeout(() => {
+                        TOURNAMENT.currentRound = 2;
+                        showTournamentDrawingRound(); 
+                    }, 10000); 
+                } else {
+                    container.innerHTML += `
+                        <div style="text-align:center; margin-top:20px;">
+                            <p>Helaas, je bent niet geplaatst voor de finale.</p>
+                            <button class="btn-cta" onclick="location.reload()" style="margin: 10px auto; display:block;">Terug naar Lobby</button>
+                        </div>`;
                 }
-            }, 1000);
+            } else {
+                // Als het de finale was, toon de winnaar knop na een korte pauze
+                setTimeout(() => {
+                    determineTournamentWinner();
+                }, 3000);
+            }
         }
 
+            // Sorteer op score
+                 
+    
         async function determineTournamentWinner() {
             try {
                 const container = document.getElementById('tournamentResults');
@@ -1725,58 +1764,70 @@ function closeModal() {
 
                 const { data: allRounds, error } = await client
                     .from('tournament_rounds')
-                    .select('*')
+                    .select('*, tournament_players(player_name)')
                     .eq('tournament_id', LOBBY.state.tournamentId);
 
-                if (error) return;
+                if (error || !allRounds) return;
 
                 const totals = {};
-                (allRounds || []).forEach(r => {
-                    if (!totals[r.player_id]) totals[r.player_id] = 0;
-                    totals[r.player_id] += r.total_score;
+                allRounds.forEach(r => {
+                    const pid = r.player_id;
+                    if (!totals[pid]) {
+                        totals[pid] = { name: r.tournament_players?.player_name || 'Onbekend', score: 0 };
+                    }
+                    totals[pid].score += r.total_score;
                 });
 
-                const playersById = {};
-                // Use original players list or check if we need to reload
-                const allPlayers = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
-                allPlayers.forEach(p => { playersById[p.id] = p; });
-
-                const entries = Object.entries(totals).map(([playerId, total]) => ({
-                    player: playersById[playerId],
-                    total
-                })).filter(e => e.player);
-
-                entries.sort((a, b) => b.total - a.total);
-
-                if (entries.length === 0) return;
-
-                const winnerEntry = entries[0];
-                TOURNAMENT.winner = winnerEntry.player;
+                const scoreboard = Object.values(totals).sort((a, b) => b.score - a.score);
+                const winner = scoreboard[0];
 
                 const card = container.querySelector('.drawing-card');
-                card.innerHTML += `
-                    <div style="margin-top: 24px; text-align:center; padding-top:20px; border-top:1px solid #eee;">
-                        <h3>🏆 TOURNAMENT WINNER</h3>
-                        <h1 style="color:var(--c-primary); margin:10px 0;">${escapeHtml(winnerEntry.player.player_name)}</h1>
-                        <p>Total Score: ${winnerEntry.total.toFixed(0)} points</p>
-                        <button class="btn-cta" style="margin-top:20px;" onclick="location.reload()">Back to Home</button>
+                card.innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        <div style="font-size: 4rem;">🏆</div>
+                        <h2 style="color:var(--c-primary);">TOERNOOI WINNAAR</h2>
+                        <h1 style="font-size: 3rem; margin: 10px 0;">${escapeHtml(winner.name)}</h1>
+                        <p style="font-size: 1.2rem;">Eindscore: <strong>${winner.score.toFixed(0)}</strong> punten</p>
+                        <hr style="margin: 20px 0; opacity: 0.2;">
+                        <button class="btn-cta" onclick="location.reload()">Verlaat Toernooi</button>
                     </div>
                 `;
-                
-                // Save winner to DB
-                await client.from('tournament_winners').insert([{
-                    tournament_id: LOBBY.state.tournamentId,
-                    winner_name: winnerEntry.player.player_name,
-                    final_score: winnerEntry.total,
-                    player_count: allPlayers.length
-                }]);
+
+                // Alleen de winnaar zelf verstuurt de score naar de Hall of Fame
+                if (winner.name === LOBBY.state.playerName) {
+                    await client.from('tournament_winners').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        winner_name: winner.name,
+                        final_score: winner.score,
+                        player_count: scoreboard.length
+                    }]);
+                    showToast('Gefeliciteerd! Je staat in de Hall of Fame!', 'success');
+                }
 
             } catch (err) {
-                console.error(err);
+                console.error("Fout bij bepalen winnaar:", err);
             }
         }
 
         // START
+
+// --- DOWNLOAD FUNCTIE VOOR DE MODAL ---
+function downloadCanvasImage() {
+    const img = document.getElementById('modalImg');
+    if (!img || !img.src) {
+        showToast('Geen afbeelding gevonden om te downloaden', 'error');
+        return;
+    }
+    
+    const link = document.createElement('a');
+    link.download = 'honden-kunstwerk.png';
+    link.href = img.src;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Tekening wordt gedownload...', 'success');
+}
         init();
 
         // Load drawings from Supabase when page loads
