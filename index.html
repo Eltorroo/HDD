@@ -658,29 +658,37 @@
             if (storedVotes) STATE.myVotes = new Set(JSON.parse(storedVotes));
         }
 
-        // --- ADVANCED DRAWING ENGINE ---
+       // --- ADVANCED DRAWING ENGINE (Smooth & Paint Update) ---
         
-        // Helper to get coordinates relative to canvas
+        // Helper: Haal coördinaten en druk op
         function getPointerPos(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
+            
+            // Fallback voor drukgevoeligheid (muis = altijd 0.5, pen = echte druk)
+            let pressure = e.pressure;
+            if (e.pointerType === 'mouse') pressure = 0.5;
+            
             return { 
                 x: (e.clientX - rect.left) * scaleX, 
                 y: (e.clientY - rect.top) * scaleY,
-                pressure: e.pressure || 0.5 // Default pressure if not supported
+                pressure: pressure
             };
         }
 
-        // Start Drawing
+        // Lijst voor stabilisatie (we middelen de laatste paar punten)
+        let inputPoints = []; 
+
+        // Start Tekenen
         canvas.addEventListener('pointerdown', (e) => {
-            e.preventDefault(); // Prevent scrolling on touch
+            e.preventDefault(); 
             canvas.setPointerCapture(e.pointerId);
             
             STATE.isDrawing = true;
             const pos = getPointerPos(e);
             
-            // If tool is fill, do fill and exit
+            // Fill tool werkt anders (klik = vul)
             if(STATE.tool === 'fill') {
                 floodFill(Math.floor(pos.x), Math.floor(pos.y), STATE.color);
                 STATE.isDrawing = false;
@@ -688,46 +696,40 @@
                 return;
             }
 
-            // Start new stroke
+            // Reset de stabilisatie buffer
+            inputPoints = [pos, pos, pos]; 
             STATE.points = [];
             STATE.points.push(pos);
             
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            
-            // If it's a dot
-            if (STATE.tool !== 'eraser') {
-                 // Initial dot
-                 const pressureWidth = getLineWidth(pos.pressure);
-                 ctx.fillStyle = STATE.color;
-                 ctx.beginPath();
-                 ctx.arc(pos.x, pos.y, pressureWidth/2, 0, Math.PI * 2);
-                 ctx.fill();
-            }
+            // Teken direct een puntje (voor stippen zetten)
+            drawDot(pos);
         });
 
-        // Move Drawing
+        // Tijdens Tekenen (De magie gebeurt hier)
         canvas.addEventListener('pointermove', (e) => {
             if (!STATE.isDrawing) return;
             e.preventDefault();
             
-            const pos = getPointerPos(e);
-            STATE.points.push(pos);
+            const rawPos = getPointerPos(e);
+            inputPoints.push(rawPos);
+            // We bewaren alleen de laatste 4 input punten voor het gemiddelde
+            if(inputPoints.length > 4) inputPoints.shift();
 
-            if (STATE.points.length < 3) {
-                const b = STATE.points[0];
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0);
-                ctx.fill();
-                ctx.closePath();
-                return;
-            }
+            // Bereken het "gladde" punt (gemiddelde van de laatste inputs)
+            // Dit haalt de bibber uit je hand
+            const smoothPos = getAveragePoint(inputPoints);
+            smoothPos.pressure = rawPos.pressure; // Behoud de druk
+
+            STATE.points.push(smoothPos);
+
+            // We hebben minimaal 3 punten nodig voor een curve
+            if (STATE.points.length < 3) return;
 
             const p1 = STATE.points[STATE.points.length - 3];
             const p2 = STATE.points[STATE.points.length - 2];
             const p3 = STATE.points[STATE.points.length - 1];
 
-            // Quadratic Bezier for smoothness
+            // Quadratic Bezier curve tussen de middelpunten
             const mid1 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
             const mid2 = { x: (p2.x + p3.x) / 2, y: (p2.y + p3.y) / 2 };
 
@@ -735,50 +737,84 @@
             ctx.moveTo(mid1.x, mid1.y);
             ctx.quadraticCurveTo(p2.x, p2.y, mid2.x, mid2.y);
 
-            // Dynamic Styling based on tool
+            // --- DE NIEUWE STIJL LOGICA ---
             const pressure = p2.pressure;
-            let width = getLineWidth(pressure);
             
+            // 1. Dikte bepalen
+            const width = getLineWidth(pressure);
+            ctx.lineWidth = width;
+
+            // 2. Opacity (Doorzichtigheid) bepalen
+            // Pen is altijd dekkend, Kwast (Brush) reageert op druk
+            let alpha = 1.0;
+            if (STATE.tool === 'brush') {
+                // Zacht drukken = 10% zichtbaar, Hard = 100%
+                alpha = Math.min(1, 0.1 + pressure * 0.9);
+            } else if (STATE.tool === 'eraser') {
+                alpha = 1.0;
+            }
+            
+            ctx.globalAlpha = alpha;
+            
+            // 3. Kleur & Composite Mode
             if (STATE.tool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = width * 2; // Eraser is bigger
             } else {
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = STATE.color;
-                ctx.lineWidth = width;
             }
-            
+
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.stroke();
         });
 
-        // End Drawing
+        // Stop Tekenen
         canvas.addEventListener('pointerup', (e) => {
             if (STATE.isDrawing) {
                 STATE.isDrawing = false;
-                ctx.globalCompositeOperation = 'source-over'; // Reset
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1.0; // Reset opacity
                 saveHistory();
+                inputPoints = [];
             }
         });
+
+        // Helper: Bereken gemiddelde coördinaat (De Stabilisator)
+        function getAveragePoint(points) {
+            let x = 0;
+            let y = 0;
+            for (let p of points) { x += p.x; y += p.y; }
+            return { x: x / points.length, y: y / points.length };
+        }
         
-        // Determine line width based on tool & pressure
+        function drawDot(pos) {
+             if (STATE.tool === 'eraser') return;
+             const width = getLineWidth(pos.pressure);
+             
+             ctx.fillStyle = STATE.color;
+             ctx.globalAlpha = STATE.tool === 'brush' ? (0.1 + pos.pressure * 0.9) : 1.0;
+             
+             ctx.beginPath();
+             ctx.arc(pos.x, pos.y, width/2, 0, Math.PI * 2);
+             ctx.fill();
+        }
+
         function getLineWidth(pressure) {
             const base = parseInt(STATE.baseLineWidth);
             
             if (STATE.tool === 'pen') {
-                // Pen: slight variation, mostly consistent
-                return Math.max(1, base * (0.5 + pressure * 0.5));
+                // Pen: Weinig variatie, strakke lijn
+                return Math.max(1, base * (0.8 + pressure * 0.4));
             } 
             else if (STATE.tool === 'brush') {
-                // Brush: Heavy variation
-                return Math.max(1, base * (pressure * 1.5));
+                // Brush: Veel variatie (dun naar dik)
+                return Math.max(1, base * (pressure * 2.5));
             }
             else if (STATE.tool === 'calligraphy') {
-                 // Calligraphy: Inverse logic? Or just simplified
                  return Math.max(1, base); 
             }
-            return base; // Eraser uses base * 2 in logic
+            return base * 2; // Eraser is groter
         }
 
         // --- FLOOD FILL ---
