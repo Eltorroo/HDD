@@ -405,6 +405,66 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
+
+/* --- MOBILE & RESPONSIVE TWEAKS --- */
+        
+        /* 1. Zorg dat het canvas nooit breder is dan het scherm */
+        .canvas-wrapper {
+            width: 100%;
+            max-width: 600px; /* Maximaal de originele breedte */
+            height: auto;
+            aspect-ratio: 4/3; /* Houd de verhouding 600x450 vast */
+            margin: 10px auto;
+        }
+
+        /* 2. Dwing het canvas om mee te schalen */
+        .canvas-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+            /* Cruciaal: vertel de browser dat hij niet mag scrollen als je hierop veegt */
+            touch-action: none; 
+        }
+
+        /* 3. Voorkom 'pull-to-refresh' verversing als je omlaag veegt */
+        body {
+            overscroll-behavior-y: none;
+        }
+
+        /* 4. Aanpassingen specifiek voor telefoons (schermen kleiner dan 600px) */
+        @media (max-width: 600px) {
+            .hero { padding: 20px 10px; }
+            .hero h1 { font-size: 1.8rem; margin-bottom: 5px; }
+            .hero p { font-size: 0.9rem; margin-bottom: 15px; }
+            .hero-stats { font-size: 0.8rem; gap: 10px; margin-bottom: 20px; }
+            
+            /* Knoppen iets handiger maken voor touch */
+            .tool-btn {
+                width: 42px; 
+                height: 42px;
+                margin: 2px;
+                font-size: 1rem;
+            }
+            
+            /* Toolbar compact houden */
+            .toolbar { padding: 8px; gap: 4px; }
+            
+            /* Navigatie balk scrollbaar maken als hij niet past */
+            .nav-tabs {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch; /* Smooth scroll op iOS */
+            }
+            .nav-tab {
+                white-space: nowrap;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            /* Verberg de "Show Reference Overlay" tekst deels als het niet past */
+            #toggleRef + span { font-size: 0.8rem; }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
