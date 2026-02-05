@@ -262,7 +262,7 @@
             gap: 24px;
         }
 
-        .art-card {
+       .art-card {
             background: var(--c-surface);
             border-radius: var(--radius-md);
             overflow: hidden;
@@ -271,9 +271,31 @@
             border: 1px solid rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            position: relative; /* Nodig voor de kroon */
+            overflow: visible;  /* Zodat de kroon uit kan steken */
         }
 
         .art-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+        /* NIEUW: De Gouden Kroon Badge */
+        .crown-badge {
+            position: absolute;
+            top: -12px;
+            right: -10px;
+            background: linear-gradient(135deg, #FFD700 0%, #F59E0B 100%);
+            color: #78350F;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 10;
+            border: 2px solid #FFFFFF;
+            transform: rotate(5deg);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
 
         .art-image {
             width: 100%;
@@ -1017,7 +1039,7 @@
             }
         }
 
-        // --- ACCURACY ALGO ---
+       // --- ACCURACY ALGO (Aangepast: Vriendelijker & Minder streng) ---
         function calculateAccuracy() {
             // 1. Veiligheidscheck: is er wel een referentiefoto?
             if(!STATE.refImage) return { total: 0, color: 0, shape: 0 };
@@ -1036,6 +1058,7 @@
                 const dR=dData[i], dG=dData[i+1], dB=dData[i+2]; // Getekende Kleur
 
                 // Check: is de referentie hier GEEN wit/leeg? (We nemen aan dat wit = leeg)
+                // Iets toleranter voor witruimte (250 ipv 255)
                 const isRefContent = (rR < 250 || rG < 250 || rB < 250);
                 
                 // Check: heb jij hier getekend? (Niet wit)
@@ -1048,16 +1071,17 @@
                         // Bereken het kleurverschil
                         const diff = Math.abs(rR-dR) + Math.abs(rG-dG) + Math.abs(rB-dB);
                         
-                        // STRENGHEID: Verschil moet klein zijn (onder de 100)
-                        if (diff < 100) {
+                        // AANPASSING 1: Tolerantie verhoogd van 100 naar 200
+                        // Dit maakt de checker veel minder streng op exacte kleuren
+                        if (diff < 200) {
                             correctPixels++; 
                         } else {
-                            // Wel getekend, maar verkeerde kleur -> Strafpunt!
+                            // Wel getekend, maar verkeerde kleur -> Strafpunt
                             wrongPixels++;
                         }
                     }
                 } else {
-                    // Hier is niks op de foto, maar jij tekende wel -> Strafpunt!
+                    // Hier is niks op de foto, maar jij tekende wel -> Strafpunt
                     if (isDrawn) {
                         wrongPixels++;
                     }
@@ -1066,24 +1090,26 @@
 
             if(totalRefPixels === 0) return { total: 0, color: 0, shape: 0 };
 
-            // --- DE PUNTENTELLING ---
+            // --- DE PUNTENTELLING (Aangepast) ---
             
-            // Basis Score: Hoeveel % van de foto heb je correct ingevuld?
-            let rawScore = (correctPixels / totalRefPixels) * 100;
+            // AANPASSING 2: Score Boost
+            // We doen * 1.1 zodat je met ~90% nauwkeurigheid al een 100 kunt halen.
+            let rawScore = ((correctPixels / totalRefPixels) * 100) * 1.1;
 
-            // Straf: Foute pixels trekken de score omlaag
-            // Factor 40 zorgt dat flink kladderen pijn doet
-            const penalty = (wrongPixels / totalRefPixels) * 40; 
+            // AANPASSING 3: Straf verminderd
+            // Factor verlaagd van 40 naar 15. Foutjes doen nu minder pijn.
+            const penalty = (wrongPixels / totalRefPixels) * 15; 
 
-            // Eindscore
+            // Eindscore berekenen
             let totalScore = rawScore - penalty;
-            totalScore = Math.max(0, totalScore); // Niet lager dan 0
+            
+            // Zorg dat score tussen 0 en 100 blijft
+            totalScore = Math.max(0, Math.min(100, totalScore));
 
             return {
                 total: Math.round(totalScore),
-                // Shape is nu gelijk aan totaal, want vorm en kleur zijn 1 geheel
                 shape: Math.round(totalScore), 
-                // Color is een indicatie van netheid (verhouding goed vs fout)
+                // Color score is percentage goede pixels vs foute pixels
                 color: Math.round((correctPixels / (correctPixels + wrongPixels || 1)) * 100)
             };
         }
@@ -1141,6 +1167,15 @@
                 const isVoted = STATE.myVotes.has(d.id);
                 const isOwn = d.isLocal === true;
                 
+                // NIEUW: Check of dit een toernooi winnaar is
+                // We kijken in de 'scores' kolom of de vlag 'isTournamentWinner' aan staat
+                const isTournamentWinner = d.scores && d.scores.isTournamentWinner === true;
+                
+                // Als het een winnaar is, maken we de HTML voor de kroon
+                const crownHtml = isTournamentWinner 
+                    ? `<div class="crown-badge">👑 Tournament Dawg</div>` 
+                    : '';
+
                 let btnClass = 'can-vote';
                 let btnText = '❤️ Vote';
                 let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
@@ -1157,7 +1192,7 @@
 
                 return `
                 <div class="art-card" onclick="openModal('${d.image}', '${escapeHtml(d.artist)}')">
-                    <img src="${d.image}" class="art-image" style="cursor: zoom-in;">
+                    ${crownHtml} <img src="${d.image}" class="art-image" style="cursor: zoom-in;">
                     <div class="art-info">
                         <div class="art-title">${escapeHtml(d.artist)}</div>
                         <div class="art-meta">
@@ -1869,10 +1904,42 @@
                 const winner = scoreboard[0];
                 
                 let finalName = document.getElementById('artistName').value.trim();
-                if (LOBBY.state.playerId === winner.id && (!finalName || finalName === 'Anonymous')) {
-                    const promptedName = prompt("🏆 Wow you won, you are a real dog drawer! Enter your name in the Hall of Fame:", "");
-                    finalName = promptedName ? promptedName.trim() : "Anonymous Legend";
-                    document.getElementById('artistName').value = finalName;
+                
+                // Check of ik (de huidige speler) de winnaar ben
+                if (LOBBY.state.playerId === winner.id) {
+                    
+                    if (!finalName || finalName === 'Anonymous') {
+                        const promptedName = prompt("🏆 Wow you won! Enter your name for the Hall of Fame:", "");
+                        finalName = promptedName ? promptedName.trim() : "Tournament Dawg";
+                        document.getElementById('artistName').value = finalName;
+                    }
+
+                    // 1. Opslaan in Tournament Hall of Fame
+                    await client.from('tournament_winners').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        winner_name: finalName,
+                        final_score: winner.score,
+                        player_count: scoreboard.length
+                    }]);
+
+                    // 2. NIEUW: Automatisch publiceren naar de Gallery met de Kroon
+                    // We pakken de huidige score en voegen de 'isTournamentWinner' vlag toe
+                    const winScores = calculateAccuracy(); 
+                    winScores.isTournamentWinner = true;
+
+                    const { error: pubError } = await client.from('drawings').insert([{ 
+                        title: "🏆 Tournament Winner", 
+                        artist_name: finalName, 
+                        image_data: canvas.toDataURL(), // De huidige tekening
+                        scores: winScores, // Hier zit de vlag in
+                        votes: 0 
+                    }]);
+                    
+                    if (!pubError) {
+                        showToast('Your winning art is pinned to the Gallery! 👑', 'success');
+                        // Herlaad gallery direct zodat je het ziet
+                        loadDrawingsFromSupabase(); 
+                    }
                 } else {
                     finalName = winner.name;
                 }
@@ -1890,15 +1957,6 @@
                     </div>
                 `;
 
-                if (LOBBY.state.playerId === winner.id) {
-                    await client.from('tournament_winners').insert([{
-                        tournament_id: LOBBY.state.tournamentId,
-                        winner_name: finalName,
-                        final_score: winner.score,
-                        player_count: scoreboard.length
-                    }]);
-                    showToast('You reached the Hall of Fame! 🐾', 'success');
-                }
             } catch (err) {
                 console.error("Error determining winner:", err);
             }
