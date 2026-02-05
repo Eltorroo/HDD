@@ -1257,54 +1257,40 @@ if (refSelectElement) {
             }
         }
         async function startTournamentFromLobby() {
-    // STOP ALLE LOBBY TIMERS DIRECT (Dit voorkomt de herstart-glitch!)
-    if (LOBBY.state.checkInterval) { 
-        clearInterval(LOBBY.state.checkInterval); 
-        LOBBY.state.checkInterval = null; 
-    }
-    if (LOBBY.state.lobbyCountdownInterval) { 
-        clearInterval(LOBBY.state.lobbyCountdownInterval); 
-        LOBBY.state.lobbyCountdownInterval = null; 
-    }
-    
-    // Zet lobby status header uit
-    const lobbyCountdown = document.getElementById('lobbyCountdown');
-    if (lobbyCountdown) lobbyCountdown.style.display = 'none';
+            // STOP ALLE LOBBY TIMERS DIRECT
+            if (LOBBY.state.checkInterval) { clearInterval(LOBBY.state.checkInterval); LOBBY.state.checkInterval = null; }
+            if (LOBBY.state.lobbyCountdownInterval) { clearInterval(LOBBY.state.lobbyCountdownInterval); LOBBY.state.lobbyCountdownInterval = null; }
+            
+            const lobbyCountdown = document.getElementById('lobbyCountdown');
+            if (lobbyCountdown) lobbyCountdown.style.display = 'none';
 
-    try {
-        if (!LOBBY.state.tournamentId) return;
+            try {
+                if (!LOBBY.state.tournamentId) return;
+                const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
+                TOURNAMENT.players = players;
 
-        // Zeker weten dat we de spelers hebben
-        const players = await LOBBY.getPlayersInLobby(LOBBY.state.tournamentId);
-        TOURNAMENT.players = players;
+                const { data: tournament, error } = await client
+                    .from('tournaments')
+                    .select('id, status')
+                    .eq('id', LOBBY.state.tournamentId)
+                    .single();
 
-        // Load current tournament
-        const { data: tournament, error } = await client
-            .from('tournaments')
-            .select('id, status')
-            .eq('id', LOBBY.state.tournamentId)
-            .single();
+                if (error || !tournament) return;
 
-        if (error || !tournament) {
-            console.error(error);
-            showToast('Could not start tournament', 'error');
-            return;
+                const nowIso = new Date().toISOString();
+                await client.from('tournaments').update({
+                    status: 'active',
+                    started_at: nowIso,
+                    current_round: 1,
+                    round_started_at: nowIso
+                }).eq('id', LOBBY.state.tournamentId);
+
+                showToast('Tournament started!', 'success');
+                beginTournamentRounds(); 
+            } catch (err) {
+                console.error(err);
+            }
         }
-
-        // Update status naar active en zet de starttijden
-        const nowIso = new Date().toISOString();
-        const { error: updateError } = await client
-            .from('tournaments')
-            .update({
-                status: 'active',
-                started_at: nowIso,
-                current_round: 1,
-                round_started_at: nowIso
-            })
-            .eq('id', LOBBY.state.tournamentId);
-
-        if (updateError) {
-            console.error(updateError);
             showToast('Could not start tournament', 'error');
             return;
         }
@@ -1629,7 +1615,6 @@ document.getElementById('sizeSlider').oninput = (e) => STATE.lineWidth = e.targe
         }
 
         // Called when 3 minutes of drawing are over
-        async function onTournamentRoundEnd() {
 async function onTournamentRoundEnd() {
             // 1. Forceer een overlay over het scherm zodat de speler stopt
             const overlay = document.createElement('div');
@@ -1778,10 +1763,8 @@ async function onTournamentRoundEnd() {
                         <div style="text-align:center; margin-top:20px;">
                             <p>Helaas, je bent niet geplaatst voor de finale.</p>
                             <button class="btn-cta" onclick="location.reload()" style="margin: 10px auto; display:block;">Terug naar Lobby</button>
-                        </div>`;
-                }
+                        </div>`;}
             } else {
-                // Als het de finale was, toon de winnaar knop na een korte pauze
                 setTimeout(() => {
                     determineTournamentWinner();
                 }, 3000);
