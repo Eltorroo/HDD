@@ -1231,9 +1231,17 @@ if (refSelectElement) {
         }
 
         // --- UTILS & HELPERS ---
-        async function startTournamentLobby() {
+       async function startTournamentLobby() {
+            const nameInput = document.getElementById('artistName');
+            const playerName = nameInput ? nameInput.value.trim() : '';
+
+            if (!playerName || playerName === 'Anonymous' || playerName === '') {
+                showToast('Vul eerst je artiestennaam in bij stap 2 (onderaan de Draw-tab)!', 'error');
+                activateTab('draw');
+document.getElementById('btnSubmit').style.display = 'none';
+                return;
+            }
             try {
-                // 1. Create lobby
                 const tournament = await LOBBY.createNewLobby();
                 if (!tournament) return;
 
@@ -1308,7 +1316,14 @@ if (updateError) throw updateError;
             }
         }
 
-        async function joinExistingLobby() {
+   async function joinExistingLobby() {
+            const nameInput = document.getElementById('artistName');
+            const playerName = nameInput ? nameInput.value.trim() : '';
+            if (!playerName || playerName === 'Anonymous' || playerName === '') {
+                showToast('Vul eerst je artiestennaam in (onderaan de Draw-tab)!', 'error');
+                activateTab('draw');
+                return;
+            }
             try {
                 const input = document.getElementById('joinLobbyCodeInput');
                 if (!input) return;
@@ -1711,46 +1726,28 @@ async function onTournamentRoundEnd() {
                 const playerName = entry.tournament_players?.player_name || 'Anoniem';
                 
                 let statusBadge = "";
-                if (TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2) {
-                    statusBadge = index < 2 
-                        ? '<span style="color:var(--c-accent-teal); font-weight:bold;">✅ FINALIST</span>' 
-                        : '<span style="color:var(--c-accent-rose);">❌ AFGEVALLEN</span>';
-                } else {
-                    statusBadge = index === 0 ? '🏆 WINNAAR' : '🥈 2e PLEK';
-                }
+                // Bepaal het aantal rondes op basis van het aantal spelers
+            const totalRoundsNeeded = TOURNAMENT.players.length > 2 ? 2 : 1;
 
-                html += `
-                    <tr style="border-bottom: 1px solid var(--c-surface-alt); ${isMe ? 'background:#FFF7ED; font-weight:bold;' : ''}">
-                        <td style="padding: 12px 8px;">${index + 1}</td>
-                        <td style="padding: 12px 8px;">${escapeHtml(playerName)} ${isMe ? '(Jij)' : ''}</td>
-                        <td style="padding: 12px 8px;">${entry.shape_score}%</td>
-                        <td style="padding: 12px 8px;">${entry.color_score}%</td>
-                        <td style="padding: 12px 8px; font-size: 1.1rem; color: var(--c-primary);">${entry.total_score.toFixed(0)}</td>
-                        <td style="padding: 12px 8px; font-size: 0.8rem;">${statusBadge}</td>
-                    </tr>
-                `;
-            });
-
-           html += `
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-
-            if (TOURNAMENT.currentRound < TOURNAMENT.totalRounds) {
-                setTimeout(() => {
+            if (TOURNAMENT.currentRound < totalRoundsNeeded) {
+                showToast('Maak je klaar voor de FINALE...', 'success');
+                setTimeout(async () => {
                     TOURNAMENT.currentRound++;
+                    // Update de database zodat iedereen weet dat de finale start
+                    await client.from('tournaments')
+                        .update({ 
+                            current_round: TOURNAMENT.currentRound, 
+                            round_started_at: new Date().toISOString() 
+                        })
+                        .eq('id', LOBBY.state.tournamentId);
                     showTournamentDrawingRound();
                 }, 8000);
             } else {
+                showToast('Toernooi afgelopen! Berekenen van de winnaar...', 'success');
                 setTimeout(() => {
                     determineTournamentWinner();
-                }, 4000);
+                }, 5000);
             }
-        }
                  
     
      async function determineTournamentWinner() {
@@ -1771,7 +1768,7 @@ async function onTournamentRoundEnd() {
                     if (!totals[pid]) {
                         totals[pid] = { name: r.tournament_players?.player_name || 'Onbekend', score: 0, id: pid };
                     }
-                    totals[pid].score += r.total_score;
+                totals[pid].score += (Number(r.total_score) || 0);
                 });
 
                 const scoreboard = Object.values(totals).sort((a, b) => b.score - a.score);
@@ -1786,7 +1783,7 @@ async function onTournamentRoundEnd() {
                 } else {
                     finalName = winner.name;
                 }
-
+document.getElementById('btnSubmit').style.display = 'block';
                 const card = container.querySelector('.drawing-card');
                 card.innerHTML = `
                     <div style="text-align:center; padding:20px;">
