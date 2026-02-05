@@ -961,26 +961,57 @@
         }
 
         // --- SUBMIT & VOTE ---
-        function vote(id) {
+        // --- SUBMIT & VOTE ---
+        async function vote(id) {
+            // 1. Zoek de tekening in de lokale lijst
             const drawing = STATE.drawings.find(d => d.id === id);
             
             if(!drawing) return;
+
+            // 2. Check of je al gestemd hebt (lokale check)
             if(STATE.myVotes.has(id)) {
                 showToast('You already voted for this!', 'error');
                 return;
             }
+            // 3. Check of het je eigen tekening is
             if(drawing.isLocal) {
                 showToast('You cannot vote for your own art!', 'error');
                 return;
             }
 
+            // 4. Update de interface DIRECT (zodat het snel voelt)
             drawing.votes++;
             STATE.myVotes.add(id);
-            saveData();
-            showToast('Vote cast! ❤️', 'success');
+            saveData(); // Slaat op in localStorage dat JIJ gestemd hebt
             renderGallery(); 
             updateGlobalStats();
+            showToast('Vote cast! ❤️', 'success');
+
+            // 5. STUUR DE STEM NAAR SUPABASE (Dit ontbrak!)
+            try {
+                // We halen eerst de actuele stand op uit de DB om race-conditions te voorkomen
+                const { data: currentData } = await client
+                    .from('drawings')
+                    .select('votes')
+                    .eq('id', id)
+                    .single();
+
+                if (currentData) {
+                    const newCount = currentData.votes + 1;
+                    
+                    const { error } = await client
+                        .from('drawings')
+                        .update({ votes: newCount })
+                        .eq('id', id);
+
+                    if (error) console.error("Vote error:", error);
+                }
+            } catch (err) {
+                console.error("Failed to send vote to server", err);
+                // Optioneel: draai de vote terug op het scherm als het mislukt
+            }
         }
+
 
         // --- RENDERING ---
         function renderGallery() {
