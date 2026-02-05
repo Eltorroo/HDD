@@ -353,6 +353,52 @@
             .nav-tabs { overflow-x: auto; justify-content: flex-start; padding-bottom: 4px; }
             .nav-tab { white-space: nowrap; }
         }
+/* --- MODAL STYLES --- */
+.art-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    backdrop-filter: blur(5px);
+    cursor: zoom-out;
+}
+
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 80vh;
+    border: 5px solid white;
+    border-radius: 8px;
+    margin-top: 5vh;
+    cursor: default;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 60px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-caption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    text-align: center;
+    color: white;
+    padding: 20px 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -511,7 +557,11 @@
             </div>
         </div>
     </div>
-
+<div id="artModal" class="art-modal" onclick="closeModal()">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="modalImg">
+    <div id="modalCaption" class="modal-caption"></div>
+</div>
     <div id="toast" class="toast"></div>
 
     <script>
@@ -936,35 +986,68 @@ const CONFIG = {
             }
         }
 
-        // --- REFERENCE IMAGE ---
-        document.getElementById('refSelect').addEventListener('change', (e) => {
-            if(!e.target.value) return;
-            const url = CONFIG.dogs[e.target.value].url;
+                            // --- VERBETERDE REFERENCE IMAGE LOGICA ---
+const refSelectElement = document.getElementById('refSelect');
+if (refSelectElement) {
+    refSelectElement.addEventListener('change', function(e) {
+        const val = e.target.value;
+        
+        // Als er geen selectie is, reset alles
+        if(val === "") {
+            STATE.refImage = null;
+            refCtx.fillStyle = '#FFFFFF';
+            refCtx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('toggleRef').disabled = true;
+            document.getElementById('toggleRef').checked = false;
+            document.getElementById('opacitySlider').disabled = true;
+            updateOverlay();
+            return;
+        }
+
+        const selectedIndex = parseInt(val);
+        const dog = CONFIG.dogs[selectedIndex];
+        
+        if(!dog) return;
+        
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; // Voorkomt problemen met tekenen van externe foto's
+        img.src = dog.url;
+        
+        img.onload = () => {
+            STATE.refImage = img;
             
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = url;
-            img.onload = () => {
-                STATE.refImage = img;
-                
-                // Draw to hidden canvas
-                const scale = Math.min(canvas.width/img.width, canvas.height/img.height);
-                const w = img.width * scale;
-                const h = img.height * scale;
-                const x = (canvas.width - w) / 2;
-                const y = (canvas.height - h) / 2;
-                
-                refCtx.fillStyle = '#FFFFFF';
-                refCtx.fillRect(0,0,canvas.width, canvas.height);
-                refCtx.drawImage(img, x, y, w, h);
-                
-                updateOverlay();
-                
-                document.getElementById('toggleRef').disabled = false;
-                document.getElementById('toggleRef').checked = true;
-                document.getElementById('opacitySlider').disabled = false;
-            };
-        });
+            // Bereken schaal om de hond netjes in het canvas te passen
+            const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+            const w = img.width * scale;
+            const h = img.height * scale;
+            const x = (canvas.width - w) / 2;
+            const y = (canvas.height - h) / 2;
+            
+            // Teken op de verborgen referentie canvas
+            refCtx.fillStyle = '#FFFFFF';
+            refCtx.fillRect(0, 0, canvas.width, canvas.height);
+            refCtx.drawImage(img, x, y, w, h);
+            
+            // Activeer de controls
+            const toggleRef = document.getElementById('toggleRef');
+            const opacitySlider = document.getElementById('opacitySlider');
+            
+            toggleRef.disabled = false;
+            toggleRef.checked = true; // Zet het vinkje automatisch aan
+            opacitySlider.disabled = false;
+            
+            // Update de visuele overlay direct nadat de afbeelding op refCtx staat
+            updateOverlay();
+        };
+
+        img.onerror = () => {
+            console.error('Kon afbeelding niet laden:', dog.url);
+            showToast('Kon voorbeeld-afbeelding niet laden.', 'error');
+        };
+    });
+}
+
+
 
         function updateOverlay() {
             overlayCtx.clearRect(0,0,canvas.width, canvas.height);
@@ -1051,21 +1134,22 @@ const CONFIG = {
                 
                 let btnClass = 'can-vote';
                 let btnText = '❤️ Vote';
-                let btnAction = `onclick="vote(${d.id})"`;
+                // BELANGRIJK: event.stopPropagation() zorgt dat de foto niet vergroot als je alleen wilt stemmen
+                let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
                 
                 if (isOwn) {
                     btnClass = 'own-art';
                     btnText = '👤 Your Art';
-                    btnAction = '';
+                    btnAction = 'onclick="event.stopPropagation();"';
                 } else if (isVoted) {
                     btnClass = 'voted';
                     btnText = '✅ Voted';
-                    btnAction = '';
+                    btnAction = 'onclick="event.stopPropagation();"';
                 }
 
                 return `
-                <div class="art-card">
-                    <img src="${d.image}" class="art-image">
+                <div class="art-card" onclick="openModal('${d.image}', '${escapeHtml(d.artist)}')">
+                    <img src="${d.image}" class="art-image" style="cursor: zoom-in;">
                     <div class="art-info">
                         <div class="art-title">${escapeHtml(d.artist)}</div>
                         <div class="art-meta">
@@ -1268,7 +1352,23 @@ const CONFIG = {
                 loadTournamentHallOfFame();
             }
         }
+function openModal(imgSrc, artistName) {
+    const modal = document.getElementById('artModal');
+    const modalImg = document.getElementById('modalImg');
+    const captionText = document.getElementById('modalCaption');
+    
+    modal.style.display = "block";
+    modalImg.src = imgSrc;
+    captionText.innerHTML = "By: " + artistName;
+    
+    // Voorkom scrollen van de achtergrond
+    document.body.style.overflow = 'hidden';
+}
 
+function closeModal() {
+    document.getElementById('artModal').style.display = "none";
+    document.body.style.overflow = 'auto';
+}
         function saveData() {
             localStorage.setItem('hddc_drawings', JSON.stringify(STATE.drawings));
             localStorage.setItem('hddc_votes', JSON.stringify([...STATE.myVotes]));
