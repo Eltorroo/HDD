@@ -1232,38 +1232,34 @@ if (refSelectElement) {
 
         // --- UTILS & HELPERS ---
        async function startTournamentLobby() {
-            const nameInput = document.getElementById('artistName');
-            const playerName = nameInput ? nameInput.value.trim() : '';
+    // 1. Haal EERST de naam op
+    const nameInput = document.getElementById('artistName');
+    const playerName = nameInput ? nameInput.value.trim() : '';
 
-            if (!playerName || playerName === 'Anonymous' || playerName === '') {
-                showToast('Vul eerst je artiestennaam in bij stap 2 (onderaan de Draw-tab)!', 'error');
-                activateTab('draw');
-document.getElementById('btnSubmit').style.display = 'none';
-                return;
-            }
-            try {
-                const tournament = await LOBBY.createNewLobby();
-                if (!tournament) return;
+    // 2. Check dan pas of hij leeg is
+    if (!playerName || playerName === 'Anonymous') {
+        showToast('Vul eerst je artiestennaam in bij stap 2!', 'error');
+        activateTab('draw');
+        return;
+    }
 
-                LOBBY.state.tournamentId = tournament.id;
+    try {
+        const tournament = await LOBBY.createNewLobby();
+        if (!tournament) return;
 
-                // 2. Add this player
-                const nameInput = document.getElementById('artistName');
-                const playerName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Anonymous';
+        LOBBY.state.tournamentId = tournament.id;
 
-                const player = await LOBBY.addPlayerToLobby(tournament, playerName);
-                if (!player) return;
+        // Gebruik de playerName die we hierboven al hebben opgehaald
+        const player = await LOBBY.addPlayerToLobby(tournament, playerName);
+        if (!player) return;
 
-                // 3. Show lobby UI
-                LOBBY.showLobbyUI(tournament, [player]);
-
-                // 4. Start polling for other players
-                LOBBY.startLobbyPolling();
-            } catch (err) {
-                console.error(err);
-                showToast('Error starting tournament lobby', 'error');
-            }
-        }
+        LOBBY.showLobbyUI(tournament, [player]);
+        LOBBY.startLobbyPolling();
+    } catch (err) {
+        console.error(err);
+        showToast('Error starting tournament lobby', 'error');
+    }
+}
        async function startTournamentFromLobby() {
             // STOP ALLE LOBBY TIMERS DIRECT (Voorkomt de herstart-glitch)
             if (LOBBY.state.checkInterval) { 
@@ -1672,8 +1668,170 @@ async function onTournamentRoundEnd() {
             }
         }
 
-       
+        async function showTournamentResultsForCurrentRound() {
+            const container = document.getElementById('tournamentResults');
+            const drawingView = document.getElementById('tournamentDrawing');
+            
+            if (!container) return;
+            if (drawingView) drawingView.style.display = 'none';
+            container.style.display = 'block';
 
+            showToast('Resultaten ophalen...', 'info');
+            // Wacht 4 seconden zodat iedereen de kans heeft om te uploaden
+            await new Promise(r => setTimeout(r, 4000));
+
+            const { data: roundScores, error } = await client
+                .from('tournament_rounds')
+                .select('*, tournament_players(player_name)')
+                .eq('tournament_id', LOBBY.state.tournamentId)
+                .eq('round_index', TOURNAMENT.currentRound);
+
+            if (error) {
+                showToast('Fout bij laden resultaten', 'error');
+                return;
+            }
+
+            const entries = (roundScores || []).sort((a, b) => b.total_score - a.total_score);
+
+            let html = `
+                <div class="drawing-card" style="align-items: stretch; max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center; margin-bottom: 8px;">
+                        Tussenstand: ${TOURNAMENT.currentRound === 1 ? 'Kwalificatie' : 'Finale'}
+                    </h2>
+                    <p style="text-align:center; color:var(--c-text-muted); margin-bottom: 20px;">
+                        Gedetailleerd overzicht van de jury-scores
+                    </p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width:100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--c-surface-alt); color: var(--c-text-muted); font-size: 0.85rem;">
+                                    <th style="padding: 12px 8px;">#</th>
+                                    <th style="padding: 12px 8px;">SPELER</th>
+                                    <th style="padding: 12px 8px;">VORM</th>
+                                    <th style="padding: 12px 8px;">KLEUR</th>
+                                    <th style="padding: 12px 8px;">TOTAAL</th>
+                                    <th style="padding: 12px 8px;">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            entries.forEach((entry, index) => {
+                const isMe = entry.player_id === LOBBY.state.playerId;
+                const playerName = entry.tournament_players?.player_name || 'Anoniem';
+                
+                let statusBadge = "";
+                if (TOURNAMENT.currentRound === 1 && TOURNAMENT.players.length > 2) {
+                    statusBadge = index < 2 
+                        ? '<span style="color:var(--c-accent-teal); font-weight:bold;">✅ FINALIST</span>' 
+                        : '<span style="color:var(--c-accent-rose);">❌ AFGEVALLEN</span>';
+                } else {
+                    statusBadge = index === 0 ? '🏆 WINNAAR' : '🥈 2e PLEK';
+                }
+
+                html += `
+                    <tr style="border-bottom: 1px solid var(--c-surface-alt); ${isMe ? 'background:#FFF7ED; font-weight:bold;' : ''}">
+                        <td style="padding: 12px 8px;">${index + 1}</td>
+                        <td style="padding: 12px 8px;">${escapeHtml(playerName)} ${isMe ? '(Jij)' : ''}</td>
+                        <td style="padding: 12px 8px;">${entry.shape_score}%</td>
+                        <td style="padding: 12px 8px;">${entry.color_score}%</td>
+                        <td style="padding: 12px 8px; font-size: 1.1rem; color: var(--c-primary);">${entry.total_score.toFixed(0)}</td>
+                        <td style="padding: 12px 8px; font-size: 0.8rem;">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+
+           html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+           container.innerHTML = html;
+
+            const totalRoundsNeeded = TOURNAMENT.players.length > 2 ? 2 : 1;
+
+            if (TOURNAMENT.currentRound < totalRoundsNeeded) {
+                showToast('Maak je klaar voor de FINALE...', 'success');
+                setTimeout(async () => {
+                    TOURNAMENT.currentRound++;
+                    await client.from('tournaments')
+                        .update({ 
+                            current_round: TOURNAMENT.currentRound, 
+                            round_started_at: new Date().toISOString() 
+                        })
+                        .eq('id', LOBBY.state.tournamentId);
+                    showTournamentDrawingRound();
+                }, 8000);
+            } else {
+                showToast('Toernooi afgelopen! Berekenen van de winnaar...', 'success');
+                setTimeout(() => {
+                    determineTournamentWinner();
+                }, 5000);
+            }    
+        } // Sluiting showTournamentResultsForCurrentRound
+
+        async function determineTournamentWinner() {
+            try {
+                const container = document.getElementById('tournamentResults');
+                if (!container) return;
+
+                const { data: allRounds, error } = await client
+                    .from('tournament_rounds')
+                    .select('*, tournament_players(player_name)')
+                    .eq('tournament_id', LOBBY.state.tournamentId);
+
+                if (error || !allRounds) return;
+
+                const totals = {};
+                allRounds.forEach(r => {
+                    const pid = r.player_id;
+                    if (!totals[pid]) {
+                        totals[pid] = { name: r.tournament_players?.player_name || 'Onbekend', score: 0, id: pid };
+                    }
+                    totals[pid].score += (Number(r.total_score) || 0);
+                });
+
+                const scoreboard = Object.values(totals).sort((a, b) => b.score - a.score);
+                const winner = scoreboard[0];
+                
+                let finalName = document.getElementById('artistName').value.trim();
+                if (LOBBY.state.playerId === winner.id && (!finalName || finalName === 'Anonymous')) {
+                    const promptedName = prompt("🏆 GEFELICITEERD! Je hebt gewonnen! Vul je naam in voor de Hall of Fame:", "");
+                    finalName = promptedName ? promptedName.trim() : "Anonieme Legende";
+                    document.getElementById('artistName').value = finalName;
+                } else {
+                    finalName = winner.name;
+                }
+
+                document.getElementById('btnSubmit').style.display = 'block';
+                const card = container.querySelector('.drawing-card');
+                card.innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        <div style="font-size: 4rem;">🏆</div>
+                        <h2 style="color:var(--c-primary);">TOERNOOI WINNAAR</h2>
+                        <h1 style="font-size: 3rem; margin: 10px 0;">${escapeHtml(finalName)}</h1>
+                        <p style="font-size: 1.2rem;">Eindscore: <strong>${winner.score.toFixed(0)}</strong> punten</p>
+                        <hr style="margin: 20px 0; opacity: 0.2;">
+                        <button class="btn-cta" onclick="location.reload()">Verlaat Toernooi</button>
+                    </div>
+                `;
+
+                if (LOBBY.state.playerId === winner.id) {
+                    await client.from('tournament_winners').insert([{
+                        tournament_id: LOBBY.state.tournamentId,
+                        winner_name: finalName,
+                        final_score: winner.score,
+                        player_count: scoreboard.length
+                    }]);
+                    showToast('Je staat in de Hall of Fame! 🐾', 'success');
+                }
+            } catch (err) {
+                console.error("Fout bij bepalen winnaar:", err);
+            }
+        }
         // START
 
 // --- DOWNLOAD FUNCTIE VOOR DE MODAL ---
