@@ -308,10 +308,24 @@
 
         <div class="neu-box ca-box">
             <span style="font-weight:bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Contract Address</span>
-            <div id="ca-text" class="ca-text-display">5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd</div>
-            <button class="neu-btn btn-green" onclick="copyContractAddress()" style="padding: 5px 10px; font-size: 0.8rem; margin-top:5px;">
-                📋 Copy
-            </button>
+            
+            <div id="ca-text" class="ca-text-display">6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS</div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 8px; justify-content: center; align-items: center;">
+                
+                <a href="https://x.com/HandDrawnDogSol?s=20" target="_blank" class="neu-btn" style="text-decoration: none; color: black; padding: 5px 12px; font-size: 1.2rem; line-height: 1;">
+                    𝕏
+                </a>
+
+                <button class="neu-btn btn-green" onclick="copyContractAddress()" style="padding: 5px 15px; font-size: 0.8rem;">
+                    📋 Copy
+                </button>
+
+                <a href="https://t.me/HDDogportal" target="_blank" class="neu-btn btn-blue" style="text-decoration: none; padding: 5px 12px; font-size: 1.2rem; line-height: 1;">
+                    ✈️
+                </a>
+
+            </div>
         </div>
 
         <div class="nav-tabs">
@@ -428,7 +442,7 @@
                  <h2 style="text-align: center; margin-bottom: 15px;">Live Chart</h2>
                  
                  <div style="text-align: center; margin-bottom: 20px;">
-                    <a href="https://jup.ag/swap/SOL-5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd" 
+                    <a href="https://jup.ag/swap/SOL-6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS" 
                        target="_blank" 
                        class="neu-btn btn-green" 
                        style="text-decoration: none; display: inline-block; font-size: 1rem;">
@@ -438,7 +452,7 @@
 
                  <div id="dexscreener-embed">
                     <iframe 
-                        src="https://dexscreener.com/solana/5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd?embed=1&theme=dark&trades=0&info=0" 
+                        src="https://dexscreener.com/solana/6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS?embed=1&theme=dark&trades=0&info=0" 
                         allow="clipboard-write" allowfullscreen>
                     </iframe>
                  </div>
@@ -1485,7 +1499,7 @@
 
         // --- COPY CONTRACT (IMPROVED) ---
         function copyContractAddress() {
-            const ca = "5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd";
+            const ca = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(ca).then(() => {
                     showToast("Contract Address Copied! 📋", "success");
