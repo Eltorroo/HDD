@@ -512,6 +512,7 @@
         <button class="nav-tab" onclick="activateTab('leaderboard')">Leaderboard</button>
         <button class="nav-tab" onclick="activateTab('accuracy')">Accuracy</button>
         <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">🏆 Tournament</button>
+<button class="nav-tab" onclick="activateTab('chart')">📈 Chart</button>
     </div>
 </nav>
 
@@ -655,6 +656,34 @@
             </div>
         </div>
     </div>
+
+<div id="chart" class="tab-content">
+            <div style="text-align: center; margin-bottom: 20px; padding-top: 20px;">
+                <h2>Live Price Action</h2>
+                <p style="color: var(--c-text-muted);">Watch the dawg go to the moon 🚀</p>
+                
+                <a href="https://raydium.io/swap/?inputCurrency=sol&outputCurrency=5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd" 
+                   target="_blank" 
+                   class="btn-cta" 
+                   style="display: inline-block; text-decoration: none; margin-top: 15px; font-size: 0.9rem; padding: 12px 24px; background: var(--c-accent-teal);">
+                   💰 Buy on Raydium
+                </a>
+            </div>
+
+            <div class="drawing-card" style="padding: 0; overflow: hidden; height: 75vh; min-height: 500px; position: relative; border: 2px solid var(--c-surface-alt);">
+                <style>
+                    #dexscreener-embed { position: relative; width: 100%; height: 100%; }
+                    @media(min-width: 1400px) { #dexscreener-embed { padding-bottom: 65%; } }
+                </style>
+                <div id="dexscreener-embed">
+                    <iframe 
+                        src="https://dexscreener.com/solana/5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd?embed=1&theme=dark&trades=0&info=0" 
+                        style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: 0;">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+
 <div id="artModal" class="art-modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
     <img class="modal-content" id="modalImg" onclick="event.stopPropagation()">
