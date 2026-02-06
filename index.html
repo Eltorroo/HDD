@@ -658,22 +658,30 @@
     </div>
 
 <div id="chart" class="tab-content">
-            <div style="text-align: center; margin-bottom: 20px; padding-top: 20px;">
-                <h2>Live Price Action</h2>
-                <p style="color: var(--c-text-muted);">Watch the dawg go to the moon 🚀</p>
-                
+    <div style="max-width: 1100px; margin: 0 auto;">
+        
+        <div class="drawing-card" style="padding: 24px; height: 80vh; min-height: 600px; display: flex; flex-direction: column; align-items: stretch;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <div style="text-align: left;">
+                    <h2 style="margin-bottom: 4px; font-size: 1.5rem;">📈 Live Price Action</h2>
+                    <p style="color: var(--c-text-muted); font-size: 0.95rem; margin: 0;">
+                        Watch the dawg go to the moon 🚀
+                    </p>
+                </div>
+
                 <a href="https://raydium.io/swap/?inputCurrency=sol&outputCurrency=5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd" 
                    target="_blank" 
                    class="btn-cta" 
-                   style="display: inline-block; text-decoration: none; margin-top: 15px; font-size: 0.9rem; padding: 12px 24px; background: var(--c-accent-teal);">
-                   💰 Buy on Raydium
+                   style="text-decoration: none; font-size: 0.9rem; padding: 10px 20px; background: var(--c-accent-teal); display: flex; align-items: center; gap: 8px;">
+                   <span>💰</span> Buy on Raydium
                 </a>
             </div>
 
-            <div class="drawing-card" style="padding: 0; overflow: hidden; height: 75vh; min-height: 500px; position: relative; border: 2px solid var(--c-surface-alt);">
+            <div style="flex: 1; position: relative; border-radius: 12px; overflow: hidden; border: 2px solid var(--c-surface-alt); box-shadow: inset 0 0 20px rgba(0,0,0,0.05);">
                 <style>
                     #dexscreener-embed { position: relative; width: 100%; height: 100%; }
-                    @media(min-width: 1400px) { #dexscreener-embed { padding-bottom: 65%; } }
+                    @media(min-width: 1400px) { #dexscreener-embed { padding-bottom: 0; } }
                 </style>
                 <div id="dexscreener-embed">
                     <iframe 
@@ -682,7 +690,10 @@
                     </iframe>
                 </div>
             </div>
+            
         </div>
+    </div>
+</div>
 
 <div id="artModal" class="art-modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
