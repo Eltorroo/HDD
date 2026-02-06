@@ -2209,6 +2209,39 @@ function copyContractAddress() {
                 console.error('Error loading drawings:', err);
             }
         }
+// --- COPY FUNCTION ---
+    // Deze moet los staan, dus niet binnen andere accolades {}
+    function copyContractAddress() {
+        const ca = "5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd";
+        
+        // Probeer moderne klembord methode
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ca).then(() => {
+                showToast("Contract Address Copied! 📋", "success");
+            }).catch(err => {
+                console.error('Copy failed', err);
+                // Fallback voor als de browser moeilijk doet
+                fallbackCopy(ca);
+            });
+        } else {
+            // Oude methode als fallback
+            fallbackCopy(ca);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast("Contract Address Copied! 📋", "success");
+        } catch (err) {
+            alert("CA: " + text); // Als alles faalt, toon gewoon een popup
+        }
+        document.body.removeChild(textArea);
+    }
     </script>
 </body>
 </html>
