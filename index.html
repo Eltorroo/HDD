@@ -662,19 +662,26 @@
         
         <div class="drawing-card" style="padding: 24px; height: 80vh; min-height: 600px; display: flex; flex-direction: column; align-items: stretch;">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                 <div style="text-align: left;">
                     <h2 style="margin-bottom: 4px; font-size: 1.5rem;">📈 Live Price Action</h2>
-                    <p style="color: var(--c-text-muted); font-size: 0.95rem; margin: 0;">
+                    <p style="color: var(--c-text-muted); font-size: 0.95rem; margin: 0 0 12px 0;">
                         Watch the dawg go to the moon 🚀
                     </p>
+                    
+                    <div onclick="copyContractAddress()" title="Click to copy full address" 
+                         style="display: inline-flex; align-items: center; gap: 8px; background: var(--c-surface-alt); padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); transition: background 0.2s; user-select: none;">
+                        <span style="font-weight: 800; color: var(--c-primary); font-size: 0.8rem; letter-spacing: 1px;">CA:</span>
+                        <code style="font-family: monospace; font-size: 0.9rem; color: var(--c-text-main);">5jqc...rmzmd</code>
+                        <span style="font-size: 1rem;">📋</span>
+                    </div>
                 </div>
 
-                <a href="https://raydium.io/swap/?inputCurrency=sol&outputCurrency=5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd" 
+                <a href="https://jup.ag/swap/SOL-5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd" 
                    target="_blank" 
                    class="btn-cta" 
-                   style="text-decoration: none; font-size: 0.9rem; padding: 10px 20px; background: var(--c-accent-teal); display: flex; align-items: center; gap: 8px;">
-                   <span>💰</span> Buy on Raydium
+                   style="text-decoration: none; font-size: 0.9rem; padding: 10px 20px; background: var(--c-accent-teal); display: flex; align-items: center; gap: 8px; transition: transform 0.2s;">
+                   <span>🪐</span> Buy on Jupiter
                 </a>
             </div>
 
@@ -693,9 +700,8 @@
             
         </div>
     </div>
-</div>
 
-<div id="artModal" class="art-modal" onclick="closeModal()">
+</div><div id="artModal" class="art-modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
     <img class="modal-content" id="modalImg" onclick="event.stopPropagation()">
     <div id="modalCaption" class="modal-caption"></div>
@@ -2098,6 +2104,15 @@
             setTimeout(() => t.className = 'toast', 3000);
         }
         function escapeHtml(text) {
+function copyContractAddress() {
+            const ca = "5jqc3jrynv4tm5id2vnwhgzx8ttw5dayafpgiokrmzmd";
+            navigator.clipboard.writeText(ca).then(() => {
+                showToast("Contract Address Copied! 📋", "success");
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast("Failed to copy CA", "error");
+            });
+        }
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
