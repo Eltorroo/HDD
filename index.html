@@ -564,16 +564,35 @@ function startReplay(id) {
             }, interval);
         }
 
-// --- SHARE ON X FUNCTIE ---
-        function shareOnX(artist, score) {
-            // Hier staat nu $HDD on Sol en de tag erbij
-            const text = `Check out this masterpiece! $HDD on Sol @HandDrawnDogSol 🎨🐶\n\nArtist: ${artist}\nAccuracy Score: ${score}%\n\nDraw your own dog here:`;
+// --- SHARE ON X (MET KOPIEER FUNCTIE) ---
+        async function shareOnX(artist, score, imageUrl) {
+            const text = `Check out this masterpiece! $HDD on Sol @HandDrawnDogSol 🎨🐶\n\nArtist: ${artist}\nAccuracy Score: ${score}%\n\n(I pasted my art below 👇)\n\nDraw your own dog here:`;
             const url = window.location.href; 
-            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-            window.open(twitterUrl, '_blank');
-        }
+            
+            // 1. Probeer de afbeelding te kopiëren naar het klembord
+            try {
+                showToast("♻️ Copying image for X...", "info");
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        [blob.type]: blob
+                    })
+                ]);
+                showToast("✅ Image copied! Just paste it in X (Ctrl+V)", "success");
+            } catch (err) {
+                console.error("Clipboard failed:", err);
+                // Als het niet lukt (bijv. op sommige mobiele browsers), geven we een andere melding
+                showToast("Could not auto-copy image. Please save it manually.", "error");
+            }
 
-        // --- UI HELPER: TABS ---
+            // 2. Open Twitter na een korte pauze (zodat de gebruiker de toast ziet)
+            setTimeout(() => {
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                window.open(twitterUrl, '_blank');
+            }, 1000);
+        }        // --- UI HELPER: TABS ---
         window.activateTab = function(tabId) {
             // 1. Knoppen updaten
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1017,8 +1036,10 @@ const CONFIG = {
             }
         }
 
-        function renderGallery() {
+function renderGallery() {
             const grid = document.getElementById('galleryGrid');
+            
+            // Sorteer: Eerst op stemmen, dan op tijd (nieuwste eerst)
             const sorted = [...STATE.drawings].sort((a, b) => {
                 if (b.votes !== a.votes) return b.votes - a.votes;
                 return b.timestamp - a.timestamp;
@@ -1028,9 +1049,12 @@ const CONFIG = {
                 const isVoted = STATE.myVotes.has(d.id);
                 const isOwn = d.isLocal === true;
                 const isTournamentWinner = d.scores && d.scores.isTournamentWinner === true;
+                
+                // Kroontje voor toernooi winnaars
                 const crownHtml = isTournamentWinner ? `<div class="crown-badge">👑 Tournament Dawg</div>` : '';
 
-let btnClass = 'neu-btn btn-green'; 
+                // Logica voor de Vote knop
+                let btnClass = 'neu-btn btn-green'; 
                 let btnText = '❤️ Vote';
                 let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
                 
@@ -1044,16 +1068,25 @@ let btnClass = 'neu-btn btn-green';
                     btnAction = 'onclick="event.stopPropagation();"';
                 }
 
+                // VEILIG MAKEN VAN DATA (zodat quotes de boel niet breken)
+                const safeArtist = escapeHtml(d.artist).replace(/'/g, "\\'");
+                const safeImage = d.image;
+                const score = d.scores.total || 0;
+
                 return `
-                <div class="art-card" onclick="openModal('${d.image}', '${escapeHtml(d.artist)}')">
-                    ${crownHtml} <img src="${d.image}" class="art-image" style="cursor: zoom-in;">
+                <div class="art-card" onclick="openModal('${safeImage}', '${safeArtist}')">
+                    ${crownHtml} 
+                    <img src="${safeImage}" class="art-image" style="cursor: zoom-in;">
+                    
                     <div class="art-info">
                         <div style="font-weight:700;">${escapeHtml(d.artist)}</div>
+                        
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.8rem;">
                             <span>❤️ ${d.votes}</span>
-                            <span>Score: ${d.scores.total || 0}%</span>
+                            <span>Score: ${score}%</span>
                         </div>
-                      <div style="display: flex; gap: 5px;">
+
+                        <div style="display: flex; gap: 5px;">
                             <button class="${btnClass}" style="flex: 2; padding:5px; font-size:0.75rem;" ${btnAction}>
                                 ${btnText}
                             </button>
@@ -1064,12 +1097,13 @@ let btnClass = 'neu-btn btn-green';
                                 </button>
                             ` : ''}
 
-                            <button class="neu-btn btn-x" style="flex: 1; padding:5px;" onclick="event.stopPropagation(); shareOnX('${escapeHtml(d.artist).replace(/'/g, "\\'")}', ${d.scores.total || 0})">
+                            <button class="neu-btn btn-x" style="flex: 1; padding:5px;" onclick="event.stopPropagation(); shareOnX('${safeArtist}', ${score}, '${safeImage}')">
                                 𝕏
                             </button>
                         </div>
                     </div>
-                </div>`;}).join('');
+                </div>`;
+            }).join('');
         }
 
         function renderLeaderboard() {
