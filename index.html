@@ -250,7 +250,8 @@
         /* --- GALLERY --- */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            /* Aangepast naar 160px zodat de knoppen passen */
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 15px;
         }
 
@@ -388,6 +389,17 @@
                     <canvas id="refCanvas" width="600" height="450" style="display: none;"></canvas>
                     <canvas id="overlayCanvas" width="600" height="450" style="pointer-events: none; z-index: 10;"></canvas>
                     <canvas id="drawCanvas" width="600" height="450" style="z-index: 5;"></canvas>
+                    
+                    </div> <div id="replayControls" style="display:none; justify-content:center; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; background:#f4f4f5; padding:10px; border-radius:8px; border:2px dashed #ccc;">
+                    <span style="font-weight:bold; font-size:0.9rem;">Replay Speed:</span>
+                    <button class="neu-btn" onclick="setReplaySpeed(0.5)" style="padding:5px 10px; font-size:0.8rem;">0.5x</button>
+                    <button class="neu-btn" onclick="setReplaySpeed(1.0)" style="padding:5px 10px; font-size:0.8rem; background:var(--accent-yellow);">1x</button>
+                    <button class="neu-btn" onclick="setReplaySpeed(5.0)" style="padding:5px 10px; font-size:0.8rem;">5x</button>
+                    <button class="neu-btn" onclick="setReplaySpeed(20.0)" style="padding:5px 10px; font-size:0.8rem;">🚀 Max</button>
+                    
+                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                    
+                    <button class="neu-btn btn-green" onclick="downloadReplayVideo()" style="padding:5px 10px; font-size:0.8rem;">📹 Save Video</button>
                 </div>
 
                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; font-size: 0.8rem;">
@@ -532,72 +544,199 @@
 
     <script>
 
-function startReplay(id) {
-          // Zoek in normale lijst OF in daily lijst
+
+// --- REPLAY & VIDEO EXPORT ENGINE (MP4 FIX) ---
+        let currentReplaySpeed = 1.0;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingMimeType = ''; // We onthouden welk type we gebruiken
+
+        function setReplaySpeed(speed) {
+            currentReplaySpeed = speed;
+            showToast(`Speed set to ${speed}x`, 'info');
+            
+            // Update knopjes visueel
+            const btns = document.querySelectorAll('#replayControls button');
+            btns.forEach(b => {
+                if(b.innerText.includes(speed + 'x')) b.style.background = 'var(--accent-yellow)';
+                else if(!b.innerText.includes('Save')) b.style.background = 'white';
+            });
+        }
+
+        function downloadReplayVideo() {
+            const id = STATE.currentReplayId; 
+            if(!id) { showToast("Start a replay first!", "error"); return; }
+            startReplay(id, true); // true = opnemen
+        }
+
+       function startReplay(id, isRecording = false) {
+            // Zoek de tekening
             let drawing = STATE.drawings.find(d => d.id === id);
-            if (!drawing) {
-                drawing = STATE.dailyDrawings.find(d => d.id === id);
-            }
+            if (!drawing) drawing = STATE.dailyDrawings.find(d => d.id === id);
+            
             if(!drawing || !drawing.replay_data || drawing.replay_data.length === 0) {
-                showToast("No replay available for this drawing", "error");
+                showToast("No replay data found.", "error");
                 return;
             }
 
-            // 1. GA NAAR TEKEN TAB
+            STATE.currentReplayId = id;
             activateTab('draw');
             
-            // 2. BEVEILIGING AANZETTEN (LOCKDOWN)
+            // UI Reset
             STATE.isReplaying = true;
             const submitBtn = document.getElementById('btnSubmit');
-            submitBtn.disabled = true; // Zet knop uit
-            submitBtn.textContent = '🔒 Replay Mode'; // Verander tekst
-            submitBtn.style.opacity = '0.5';
-            canvas.style.pointerEvents = 'none'; // Zorgt dat je niet door de replay heen kunt tekenen
+            if(submitBtn) {
+                submitBtn.disabled = true; 
+                submitBtn.textContent = isRecording ? '🔴 Recording...' : '🔒 Replaying';
+                submitBtn.style.opacity = '0.5';
+            }
+            canvas.style.pointerEvents = 'none'; 
+            document.getElementById('replayControls').style.display = 'flex';
 
-            // Maak canvas leeg voor de start
+            // Canvas reset
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            // --- FIX VOOR ZWARTE VIDEO: MAAK ACHTERGROND WIT ---
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+            // --------------------------------------------------
+
+            const bgSelect = document.getElementById('bgSelect');
+            if(bgSelect) bgSelect.value = ""; 
+
+            // --- VIDEO RECORDING START (SLIMME MP4 CHECK) ---
+            if(isRecording) {
+                try {
+                    const stream = canvas.captureStream(30); // 30 FPS
+                    
+                    if (MediaRecorder.isTypeSupported('video/mp4')) {
+                        recordingMimeType = 'video/mp4';
+                    } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+                        recordingMimeType = 'video/mp4;codecs=h264';
+                    } else {
+                        recordingMimeType = 'video/webm';
+                    }
+
+                    console.log("Recording with:", recordingMimeType);
+
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: recordingMimeType });
+                    recordedChunks = [];
+                    mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) recordedChunks.push(e.data); };
+                    mediaRecorder.onstop = exportVideoFile;
+                    mediaRecorder.start();
+                    showToast("🔴 Recording started...", "info");
+                } catch(e) {
+                    console.error("Recording failed", e);
+                    showToast("Video recording not supported on this device", "error");
+                    isRecording = false;
+                }
+            }
+
             const data = drawing.replay_data;
             let i = 0;
-            const interval = 20000 / data.length;
+            const baseInterval = 15; 
 
-            showToast("Playing replay... (Click Trash 🗑️ to exit)", "info");
-
-            const timer = setInterval(() => {
-                // Als de gebruiker op Prullenbak heeft gedrukt, stoppen we direct
+            function playNextFrame() {
                 if (!STATE.isReplaying) {
-                    clearInterval(timer);
+                    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                     return;
                 }
 
-                if (i >= data.length) {
-                    clearInterval(timer);
-                    showToast("Replay finished! Clear canvas to draw.", "success");
-                    return;
+                let pointsToDraw = Math.max(1, Math.ceil(currentReplaySpeed));
+                if(currentReplaySpeed < 1) pointsToDraw = 1; 
+
+                for(let k=0; k < pointsToDraw; k++) {
+                    if (i >= data.length) {
+                        finishReplay(isRecording);
+                        return;
+                    }
+
+                    const p = data[i];
+
+                    if (p.tool === 'fill') {
+                        floodFill(p.x, p.y, p.color);
+                    } else {
+                        // --- FIX VOOR GUM IN VIDEO ---
+                        // In plaats van 'destination-out' (wat transparant/zwart maakt),
+                        // tekenen we wit ('source-over' met #FFFFFF) als we aan het opnemen zijn of replayen.
+                        ctx.globalCompositeOperation = 'source-over';
+                        
+                        if (p.tool === 'eraser') {
+                            ctx.strokeStyle = '#FFFFFF'; // Gum = Witte verf
+                        } else {
+                            ctx.strokeStyle = p.color;
+                        }
+                        // -----------------------------
+
+                        ctx.lineWidth = p.size;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+
+                        if (p.isNew) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p.x, p.y); 
+                            ctx.stroke();
+                        } else {
+                            let prevIndex = i - 1;
+                            while(prevIndex >= 0 && data[prevIndex].tool === 'fill') { prevIndex--; }
+                            
+                            if(prevIndex >= 0) {
+                                const prev = data[prevIndex];
+                                ctx.beginPath();
+                                ctx.moveTo(prev.x, prev.y);
+                                ctx.lineTo(p.x, p.y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    i++;
                 }
 
-                const p = data[i];
-                ctx.globalCompositeOperation = (p.tool === 'eraser') ? 'destination-out' : 'source-over';
-                ctx.beginPath();
-                ctx.lineWidth = p.size;
-                ctx.strokeStyle = p.color;
-                ctx.lineCap = 'round';
-
-                if (p.isNew || i === 0) {
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x, p.y);
-                } else {
-                    const prev = data[i-1];
-                    ctx.moveTo(prev.x, prev.y);
-                    ctx.lineTo(p.x, p.y);
-                }
-                ctx.stroke();
-                i++;
-            }, interval);
+                let delay = baseInterval;
+                if (currentReplaySpeed < 1) delay = baseInterval / currentReplaySpeed; 
+                setTimeout(playNextFrame, delay);
+            }
+            playNextFrame();
         }
 
-// --- SHARE ON X (MET KOPIEER FUNCTIE) ---
+        function finishReplay(wasRecording) {
+            STATE.isReplaying = false;
+            showToast("Replay finished! 🎬", "success");
+            
+            if(wasRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+
+            const submitBtn = document.getElementById('btnSubmit');
+            if(submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'PUBLISH';
+                submitBtn.style.opacity = '1';
+            }
+            canvas.style.pointerEvents = 'auto';
+        }
+
+        function exportVideoFile() {
+            // Bepaal de juiste extensie op basis van wat we gekozen hebben
+            const isMp4 = recordingMimeType.includes('mp4');
+            const extension = isMp4 ? 'mp4' : 'webm';
+            const type = isMp4 ? 'video/mp4' : 'video/webm';
+
+            const blob = new Blob(recordedChunks, { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            // Hier zorgen we voor de juiste bestandsnaam
+            a.download = `hdd-masterpiece-${Date.now()}.${extension}`;
+            document.body.appendChild(a);
+           a.click();
+            window.URL.revokeObjectURL(url);
+            showToast(`Video saved as .${extension}! 💾`, "success");
+        }        
+        
+        // --- SHARE ON X (MET KOPIEER FUNCTIE) ---
         async function shareOnX(artist, score, imageUrl) {
             const text = `Check out this masterpiece! $HDD on Sol @HandDrawnDogSol 🎨🐶\n\nArtist: ${artist}\nAccuracy Score: ${score}%\n\n(I pasted my art below 👇)\n\nDraw your own dog here:`;
             const url = window.location.href; 
@@ -792,11 +931,23 @@ dailyDrawings: [],
         canvas.addEventListener('pointerdown', (e) => {
             e.preventDefault(); 
             canvas.setPointerCapture(e.pointerId);
-           STATE.isDrawing = true;
-            STATE.newStroke = true; // NIEUW: Zet schakelaar aan
+            STATE.isDrawing = true;
+            STATE.newStroke = true; 
             const pos = getPointerPos(e);
+            
             if(STATE.tool === 'fill') {
+                // 1. Voer de fill uit
                 floodFill(Math.floor(pos.x), Math.floor(pos.y), STATE.color);
+                
+                // 2. SLA DE FILL OP VOOR DE REPLAY!
+                STATE.recording.push({
+                    tool: 'fill',
+                    x: Math.floor(pos.x),
+                    y: Math.floor(pos.y),
+                    color: STATE.color,
+                    isNew: true
+                });
+
                 STATE.isDrawing = false;
                 saveHistory();
                 return;
@@ -1760,9 +1911,13 @@ function renderGallery() {
             setTimeout(() => t.className = 'toast', 3000);
         }
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            if (!text) return text;
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
 
@@ -1794,11 +1949,16 @@ function renderGallery() {
        // HIER IS DE FIX: We koppelen de Undo functie weer aan de knop
        document.getElementById('btnUndo').onclick = undo;
 
-       // Hier begint de Prullenbak code
+      // Hier begint de Prullenbak code
        document.getElementById('btnClear').onclick = () => { 
             // 1. Reset de beveiliging
             STATE.isReplaying = false;
+            
+            // NIEUW: Verberg de snelheidsknoppen direct
+            document.getElementById('replayControls').style.display = 'none';
+
             const submitBtn = document.getElementById('btnSubmit');
+            
             
             // We checken even of de knop bestaat om errors te voorkomen
             if(submitBtn) {
