@@ -80,6 +80,15 @@
         .btn-green { background: var(--accent-green); }
         .btn-red { background: var(--accent-red); color: white; }
 
+.btn-x { 
+            background: #000000 !important; 
+            color: white !important; 
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .form-control {
             width: 100%;
             padding: 12px;
@@ -219,6 +228,12 @@
             aspect-ratio: 4/3;
             border: var(--border);
             background: white;
+            
+            /* DEZE REGELS ZIJN NIEUW: */
+            background-size: cover;
+            background-position: center;
+            /* ----------------------- */
+
             margin-bottom: 15px;
             touch-action: none;
             overflow: hidden;
@@ -342,6 +357,7 @@
                 <h2 style="text-align: center; margin-bottom: 15px;">Create Masterpiece</h2>
                 
                 <input type="text" id="dogTitle" class="form-control" placeholder="1. Name your artwork..." maxlength="50">
+                
                 <select id="refSelect" class="form-control">
                     <option value="">Choose Reference (Optional)...</option>
                 </select>
@@ -370,12 +386,25 @@
                     <canvas id="drawCanvas" width="600" height="450" style="z-index: 5;"></canvas>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; font-size: 0.8rem;">
+               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; font-size: 0.8rem;">
                     <div>
                         <input type="checkbox" id="toggleRef" disabled> Overlay Ref
                         <input type="range" id="opacitySlider" min="0" max="100" value="30" disabled style="width:60px; vertical-align:middle;">
                     </div>
                 </div>
+
+                <select id="bgSelect" class="form-control" style="margin-bottom: 10px; border: 2px solid var(--accent-blue); font-weight: bold;">
+                    <option value="">🏠 Studio (White Background)</option>
+                    <option value="snowy">🏔️ Snowy Mountain</option>
+                    <option value="arena">🏟️ Pokémon Arena</option>
+                    <option value="pyramid">🐫 Pyramid Dawg</option>
+                    <option value="tajmahal">🕌 The Dawg at Taj Mahal?</option>
+                    <option value="husky">❄️ Husky’s Only</option>
+                    <option value="desert">🌵 Desert</option>
+                    <option value="beach">🏖️ Beach Lover</option>
+                    <option value="paris">🥐 Oui Oui</option>
+                    <option value="adventure">🧗 Mountain Adventure</option>
+                </select>
 
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="artistName" class="form-control" placeholder="2. Artist Name" maxlength="30" style="margin-bottom: 0;">
@@ -473,6 +502,77 @@
     </div>
 
     <script>
+
+function startReplay(id) {
+            const drawing = STATE.drawings.find(d => d.id === id);
+            if(!drawing || !drawing.replay_data || drawing.replay_data.length === 0) {
+                showToast("No replay available for this drawing", "error");
+                return;
+            }
+
+            // 1. GA NAAR TEKEN TAB
+            activateTab('draw');
+            
+            // 2. BEVEILIGING AANZETTEN (LOCKDOWN)
+            STATE.isReplaying = true;
+            const submitBtn = document.getElementById('btnSubmit');
+            submitBtn.disabled = true; // Zet knop uit
+            submitBtn.textContent = '🔒 Replay Mode'; // Verander tekst
+            submitBtn.style.opacity = '0.5';
+            canvas.style.pointerEvents = 'none'; // Zorgt dat je niet door de replay heen kunt tekenen
+
+            // Maak canvas leeg voor de start
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const data = drawing.replay_data;
+            let i = 0;
+            const interval = 20000 / data.length;
+
+            showToast("Playing replay... (Click Trash 🗑️ to exit)", "info");
+
+            const timer = setInterval(() => {
+                // Als de gebruiker op Prullenbak heeft gedrukt, stoppen we direct
+                if (!STATE.isReplaying) {
+                    clearInterval(timer);
+                    return;
+                }
+
+                if (i >= data.length) {
+                    clearInterval(timer);
+                    showToast("Replay finished! Clear canvas to draw.", "success");
+                    return;
+                }
+
+                const p = data[i];
+                ctx.globalCompositeOperation = (p.tool === 'eraser') ? 'destination-out' : 'source-over';
+                ctx.beginPath();
+                ctx.lineWidth = p.size;
+                ctx.strokeStyle = p.color;
+                ctx.lineCap = 'round';
+
+                if (p.isNew || i === 0) {
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x, p.y);
+                } else {
+                    const prev = data[i-1];
+                    ctx.moveTo(prev.x, prev.y);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.stroke();
+                i++;
+            }, interval);
+        }
+
+// --- SHARE ON X FUNCTIE ---
+        function shareOnX(artist, score) {
+            // Hier staat nu $HDD on Sol en de tag erbij
+            const text = `Check out this masterpiece! $HDD on Sol @HandDrawnDogSol 🎨🐶\n\nArtist: ${artist}\nAccuracy Score: ${score}%\n\nDraw your own dog here:`;
+            const url = window.location.href; 
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            window.open(twitterUrl, '_blank');
+        }
+
         // --- UI HELPER: TABS ---
         window.activateTab = function(tabId) {
             // 1. Knoppen updaten
@@ -513,9 +613,22 @@
         const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz"; 
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const CONFIG = {
+        
+const CONFIG = {
             width: 600,
             height: 450,
+            backgrounds: {
+              snowy: 'https://i.imgur.com/xyjKB8y.jpeg',
+                arena: 'https://i.imgur.com/SQN7Ynp.jpeg',
+                pyramid: 'https://i.imgur.com/LswYR2j.jpeg',
+                tajmahal: 'https://i.imgur.com/k7lMXFB.jpeg',
+                husky: 'https://i.imgur.com/qNXdUFe.jpeg',
+                desert: 'https://i.imgur.com/CHbwFof.jpeg',
+                beach: 'https://i.imgur.com/VqgRlwS.jpeg',
+                paris: 'https://i.imgur.com/27PPx5F.jpeg',
+                adventure: 'https://i.imgur.com/ejYHOgV.jpeg'
+            },
+            
             dogs: [
                 { name: 'Dawg w the glasses', url: 'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=735&auto=format&fit=crop' },
                 { name: 'I don\'t know', url: 'https://i.imgur.com/HQLadRP.jpeg' },
@@ -543,7 +656,10 @@
             historyStep: -1,
             refImage: null,
             points: [],
-            isDrawing: false
+           isDrawing: false,
+          newStroke: false,
+            isReplaying: false, // NIEUW: Houdt bij of we kijken of tekenen
+            recording: []
         };
 
         const canvas = document.getElementById('drawCanvas');
@@ -557,8 +673,11 @@
             const storedVotes = localStorage.getItem('hddc_votes');
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // HIER HEBBEN WE DE WITTE VERF WEGGEHAALD
+            // We maken het canvas leeg (transparant) in plaats van wit
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
             saveHistory();
 
             const select = document.getElementById('refSelect');
@@ -592,7 +711,8 @@
         canvas.addEventListener('pointerdown', (e) => {
             e.preventDefault(); 
             canvas.setPointerCapture(e.pointerId);
-            STATE.isDrawing = true;
+           STATE.isDrawing = true;
+            STATE.newStroke = true; // NIEUW: Zet schakelaar aan
             const pos = getPointerPos(e);
             if(STATE.tool === 'fill') {
                 floodFill(Math.floor(pos.x), Math.floor(pos.y), STATE.color);
@@ -618,6 +738,20 @@
             smoothPos.pressure = rawPos.pressure; 
             STATE.points.push(smoothPos);
             
+// Sla de beweging op voor de replay
+            if(STATE.isDrawing) {
+                STATE.recording.push({
+                    x: smoothPos.x, 
+                    y: smoothPos.y, 
+                    color: STATE.color,
+                    size: getLineWidth(rawPos.pressure),
+                    tool: STATE.tool,
+                    isNew: STATE.newStroke // Correcte check
+                });
+                // Zet de schakelaar direct weer uit na het eerste punt
+                STATE.newStroke = false; 
+            }
+
             if (STATE.points.length < 3) return;
 
             const p1 = STATE.points[STATE.points.length - 3];
@@ -734,23 +868,24 @@
 
         function saveHistory() {
             STATE.historyStep++;
+            // We maken de geschiedenis schoon als je een nieuwe lijn trekt na een 'Undo'
             STATE.history = STATE.history.slice(0, STATE.historyStep);
-            STATE.history.push(canvas.toDataURL());
-            if(STATE.history.length > 20) { STATE.history.shift(); STATE.historyStep--; }
+            // We slaan nu de rauwe pixel-data op in plaats van een zware tekststring
+            STATE.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            // Maximaal 20 stappen onthouden om geheugen te besparen
+            if(STATE.history.length > 20) { 
+                STATE.history.shift(); 
+                STATE.historyStep--; 
+            }
         }
 
         function undo() {
             if(STATE.historyStep > 0) {
                 STATE.historyStep--;
-                const img = new Image();
-                img.src = STATE.history[STATE.historyStep];
-                img.onload = () => {
-                    ctx.clearRect(0,0,canvas.width,canvas.height);
-                    ctx.drawImage(img,0,0);
-                }
+                // Plaats de vorige pixels direct terug op het canvas
+                ctx.putImageData(STATE.history[STATE.historyStep], 0, 0);
             }
         }
-
         const refSelectElement = document.getElementById('refSelect');
         if (refSelectElement) {
             refSelectElement.addEventListener('change', function(e) {
@@ -895,7 +1030,7 @@
                 const isTournamentWinner = d.scores && d.scores.isTournamentWinner === true;
                 const crownHtml = isTournamentWinner ? `<div class="crown-badge">👑 Tournament Dawg</div>` : '';
 
-                let btnClass = 'neu-btn btn-green'; 
+let btnClass = 'neu-btn btn-green'; 
                 let btnText = '❤️ Vote';
                 let btnAction = `onclick="event.stopPropagation(); vote(${d.id})"`;
                 
@@ -918,12 +1053,23 @@
                             <span>❤️ ${d.votes}</span>
                             <span>Score: ${d.scores.total || 0}%</span>
                         </div>
-                        <button class="${btnClass}" style="width:100%; padding:5px;" ${btnAction}>
-                            ${btnText}
-                        </button>
+                      <div style="display: flex; gap: 5px;">
+                            <button class="${btnClass}" style="flex: 2; padding:5px; font-size:0.75rem;" ${btnAction}>
+                                ${btnText}
+                            </button>
+                            
+                            ${d.replay_data && d.replay_data.length > 0 ? `
+                                <button class="neu-btn" style="flex: 1; padding:5px;" title="Watch Replay" onclick="event.stopPropagation(); startReplay(${d.id})">
+                                    ▶
+                                </button>
+                            ` : ''}
+
+                            <button class="neu-btn btn-x" style="flex: 1; padding:5px;" onclick="event.stopPropagation(); shareOnX('${escapeHtml(d.artist).replace(/'/g, "\\'")}', ${d.scores.total || 0})">
+                                𝕏
+                            </button>
+                        </div>
                     </div>
-                </div>`;
-            }).join('');
+                </div>`;}).join('');
         }
 
         function renderLeaderboard() {
@@ -1520,10 +1666,33 @@
             document.body.removeChild(textArea);
         }
 
-        // --- EVENT BINDINGS ---
-        document.getElementById('btnUndo').onclick = undo;
-        document.getElementById('btnClear').onclick = () => { ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,canvas.width,canvas.height); saveHistory(); };
-        
+       // --- EVENT BINDINGS ---
+       
+       // HIER IS DE FIX: We koppelen de Undo functie weer aan de knop
+       document.getElementById('btnUndo').onclick = undo;
+
+       // Hier begint de Prullenbak code
+       document.getElementById('btnClear').onclick = () => { 
+            // 1. Reset de beveiliging
+            STATE.isReplaying = false;
+            const submitBtn = document.getElementById('btnSubmit');
+            
+            // We checken even of de knop bestaat om errors te voorkomen
+            if(submitBtn) {
+                submitBtn.disabled = false; // Knop weer aan
+                submitBtn.textContent = 'PUBLISH'; // Tekst terug
+                submitBtn.style.opacity = '1';
+            }
+            canvas.style.pointerEvents = 'auto'; // Je mag weer tekenen
+
+            // 2. Wis het canvas (MAAK HET TRANSPARANT)
+            // De regels met 'fillStyle' en 'fillRect' zijn hier weggehaald!
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 3. Reset history en recording
+            saveHistory(); 
+            STATE.recording = [];
+        };
         const tools = { btnPen: 'pen', btnBrush: 'brush', btnCalligraphy: 'calligraphy', btnEraser: 'eraser', btnFill: 'fill' };
         Object.keys(tools).forEach(id => {
             const el = document.getElementById(id);
@@ -1541,6 +1710,31 @@
         document.getElementById('toggleRef').onchange = updateOverlay;
         document.getElementById('opacitySlider').oninput = updateOverlay;
 
+// --- BACKGROUND CHANGER ---
+        const bgSelect = document.getElementById('bgSelect');
+        if (bgSelect) {
+            bgSelect.addEventListener('change', (e) => {
+                const type = e.target.value;
+                const canvasWrapper = document.querySelector('.canvas-wrapper');
+                
+                // Reset eerst alles naar wit
+                canvasWrapper.style.backgroundImage = '';
+                STATE.currentBgImage = null; 
+
+                if (type && CONFIG.backgrounds[type]) {
+                    const url = CONFIG.backgrounds[type];
+                    // Zet de achtergrond op de container (achter het canvas)
+                    canvasWrapper.style.backgroundImage = `url('${url}')`;
+                    
+                    // Preload de image in het geheugen voor tijdens het uploaden
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.src = url;
+                    STATE.currentBgImage = img;
+                }
+            });
+        }
+
         // --- LOAD DATA ---
         window.addEventListener('load', async function() {
             init();
@@ -1554,7 +1748,31 @@
 
             const title = titleInput.value.trim();
             const artist = artistInput.value.trim();
-            const imageData = canvas.toDataURL();
+            // --- SAMENVOEGEN VAN ACHTERGROND EN TEKENING ---
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+
+            // 1. Teken de achtergrond (of wit als er geen is)
+            if (STATE.currentBgImage) {
+                const img = STATE.currentBgImage;
+                // Slimme berekening om het plaatje 'cover' te laten fitten
+                const scale = Math.max(tempCanvas.width / img.width, tempCanvas.height / img.height);
+                const x = (tempCanvas.width / 2) - (img.width / 2) * scale;
+                const y = (tempCanvas.height / 2) - (img.height / 2) * scale;
+                tCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            } else {
+                tCtx.fillStyle = '#FFFFFF';
+                tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+
+            // 2. Teken jouw kunstwerk er overheen
+            tCtx.drawImage(canvas, 0, 0);
+
+            // 3. Maak hier de uiteindelijke foto van
+            const imageData = tempCanvas.toDataURL();
+            // -----------------------------------------------
             const scores = calculateAccuracy();
 
             if (!title || !artist) {
@@ -1570,7 +1788,8 @@
                     artist_name: artist, 
                     image_data: imageData,
                     scores: scores,
-                    votes: 0 
+                    votes: 0,
+                    replay_data: STATE.recording 
                 }]);
 
                 if (error) throw error;
@@ -1578,10 +1797,13 @@
                 showToast('Drawing published to Supabase! 🎉', 'success');
                 titleInput.value = '';
                 artistInput.value = '';
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Canvas weer transparant maken voor de volgende tekening
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
                 STATE.history = [];
                 STATE.historyStep = -1;
+STATE.recording = []; // Reset de replay opname
 
                 await loadDrawingsFromSupabase();
                 renderGallery();
@@ -1606,6 +1828,7 @@
             image: d.image_data,
             votes: d.votes,
             scores: d.scores || { total: 0, color: 0, shape: 0 },
+replay_data: d.replay_data || [],
             timestamp: new Date(d.created_at).getTime(),
             isLocal: false
         }));
