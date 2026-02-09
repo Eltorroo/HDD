@@ -1908,8 +1908,10 @@ function renderGallery() {
             document.body.removeChild(link);
         }
         function saveData() {
-            localStorage.setItem('hddc_drawings', JSON.stringify(STATE.drawings));
+            // We slaan alleen je eigen stemmen op, dat neemt bijna geen ruimte in.
+            // De tekeningen zelf halen we wel uit de database.
             localStorage.setItem('hddc_votes', JSON.stringify([...STATE.myVotes]));
+            
             updateGlobalStats();
         }
         function updateGlobalStats() {
