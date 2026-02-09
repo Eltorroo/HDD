@@ -342,15 +342,30 @@
                 </a>
             </div>
 
-            <div id="burnWidget" style="width:100%; max-width: 90%; margin: 0 auto; padding: 6px; background: rgba(255,255,255,0.5); border: 2px solid black; border-radius: 6px; display:none;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; font-weight:bold; font-size:0.75rem;">
-                    <span>🔥 BURNED:</span>
-                    <span id="burnPercentDisplay">Loading...</span>
+            <div id="statsWidget" style="width:100%; max-width: 90%; margin: 10px auto 0; padding: 10px; background: rgba(255,255,255,0.5); border: 2px solid black; border-radius: 6px; display:none;">
+                
+                <div style="margin-bottom: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; font-weight:bold; font-size:0.75rem;">
+                        <span>🔥TOKENS BURNED (Gone)</span>
+                        <span id="burnPercentDisplay">Loading...</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:white; border:1px solid black; border-radius:4px; overflow:hidden;">
+                        <div id="burnProgressBar" style="width:0%; height:100%; background: #EF4444; transition: width 1s ease-out;"></div>
+                    </div>
+                    <div id="burnTotalDisplay" style="text-align:right; font-size:0.65rem; font-family:monospace; opacity:0.7;">checking chain...</div>
                 </div>
-                <div style="width:100%; height:8px; background:white; border:1px solid black; border-radius:4px; overflow:hidden; position:relative;">
-                    <div id="burnProgressBar" style="width:0%; height:100%; background: #EF4444; transition: width 1s ease-out;"></div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; font-weight:bold; font-size:0.75rem;">
+                        <span> 🔒TOKENS LOCKED  </span>
+                        <span id="liqPercentDisplay">Loading...</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:white; border:1px solid black; border-radius:4px; overflow:hidden;">
+                        <div id="liqProgressBar" style="width:0%; height:100%; background: #3B82F6; transition: width 1s ease-out;"></div>
+                    </div>
+                    <div id="liqTotalDisplay" style="text-align:right; font-size:0.65rem; font-family:monospace; opacity:0.7;">checking chain...</div>
                 </div>
-                <div id="burnTotalDisplay" style="text-align:right; font-size:0.65rem; font-family:monospace; margin-top:2px;">fetching chain data...</div>
+
             </div>
         </div>
 
@@ -2321,67 +2336,67 @@ replay_data: d.replay_data || [],
             }).join('');
         }
 
-    // --- ROBUST SOLANA BURN TRACKER (SUPER STABLE) ---
-        async function fetchBurnStats() {
+   // --- SMART CHAIN STATS (BURN + LIQUIDITY) ---
+        async function fetchChainStats() {
             const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
             const INITIAL_SUPPLY = 1_000_000_000; 
 
-            // NIEUWE LIJST: PublicNode staat bovenaan, die is het meest stabiel voor websites
-            const RPC_ENDPOINTS = [
-                "https://solana-rpc.publicnode.com",      // Zeer betrouwbaar
-                "https://rpc.ankr.com/solana",            // Goede backup
-                "https://api.mainnet-beta.solana.com"     // Laatste redmiddel
-            ];
-
-            const widget = document.getElementById('burnWidget');
-            const percentEl = document.getElementById('burnPercentDisplay');
-            const barEl = document.getElementById('burnProgressBar');
-            const totalEl = document.getElementById('burnTotalDisplay');
-
+            // Widget aanzetten
+            const widget = document.getElementById('statsWidget');
             if(widget) widget.style.display = 'block';
+
+            // Lijst met nodes (als er een faalt, pakt hij de volgende)
+            const RPC_ENDPOINTS = [
+                "https://solana-rpc.publicnode.com",
+                "https://rpc.ankr.com/solana",
+                "https://api.mainnet-beta.solana.com"
+            ];
 
             for (const rpcUrl of RPC_ENDPOINTS) {
                 try {
-                    // 1. Probeer verbinding
+                    console.log("Connecting to chain via:", rpcUrl);
                     const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
                     const pubKey = new solanaWeb3.PublicKey(CA);
 
-                    // 2. Data ophalen
+                    // 1. HAAL BURN DATA OP (Totale supply check)
                     const tokenSupply = await connection.getTokenSupply(pubKey);
                     const currentSupply = tokenSupply.value.uiAmount;
-
-                    // 3. Berekenen
                     const burnedAmount = INITIAL_SUPPLY - currentSupply;
                     const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
 
-                    // 4. UI Updaten
-                    if(widget) {
-                        percentEl.textContent = `${burnedPercent.toFixed(2)}%`;
-                        barEl.style.width = `${burnedPercent}%`;
-                        
-                        const formattedBurn = Math.floor(burnedAmount).toLocaleString('nl-NL');
-                        totalEl.textContent = `${formattedBurn} $HDD Gone Forever`;
-                        totalEl.style.color = 'black'; 
-                    }
+                    // Update Burn UI
+                    document.getElementById('burnPercentDisplay').textContent = `${burnedPercent.toFixed(2)}%`;
+                    document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
+                    document.getElementById('burnTotalDisplay').textContent = `${Math.floor(burnedAmount).toLocaleString()} $HDD`;
+
+                    // 2. HAAL LIQUIDITY DATA OP (De "Slimme" Truc)
+                    // We vragen: "Geef mij de grootste houders van deze token"
+                    const largestAccounts = await connection.getTokenLargestAccounts(pubKey);
                     
-                    // GELUKT! Stop de loop en functie.
-                    return; 
+                    if(largestAccounts.value && largestAccounts.value.length > 0) {
+                        // De grootste houder is vrijwel ALTIJD de Raydium Pool (of Bonding Curve)
+                        // Dit is de "Locked" liquidity waar mensen tegen handelen.
+                        const poolBalance = largestAccounts.value[0].uiAmount;
+                        const poolPercent = (poolBalance / INITIAL_SUPPLY) * 100;
+
+                        // Update Liquidity UI
+                        document.getElementById('liqPercentDisplay').textContent = `${poolPercent.toFixed(2)}%`;
+                        document.getElementById('liqProgressBar').style.width = `${poolPercent}%`;
+                        document.getElementById('liqTotalDisplay').textContent = `${Math.floor(poolBalance).toLocaleString()} $HDD`;
+                    }
+
+                    // Als we hier zijn, is alles gelukt. Stop de loop.
+                    break; 
 
                 } catch (err) {
-                    console.warn(`Server ${rpcUrl} niet bereikbaar, volgende proberen...`);
-                    // Gaat automatisch door naar de volgende in de lijst
+                    console.warn(`Node ${rpcUrl} failed, trying next...`, err);
+                    // Hij probeert automatisch de volgende in de lijst
                 }
-            }
-
-            // Als ALLES faalt:
-            if(totalEl) {
-                totalEl.textContent = "⚠️ Retrying connection...";
-                totalEl.style.color = "orange";
-                setTimeout(fetchBurnStats, 4000); // Probeer sneller opnieuw (4 sec)
             }
         }
         
-        fetchBurnStats();
+        // Start direct bij laden
+        fetchChainStats();
 
     </script>
 </body>
