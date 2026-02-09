@@ -1223,10 +1223,8 @@ dailyDrawings: [],
             };
         }
 
-        // --- VOTE FUNCTION (FIXED WITH RPC) ---
-      // --- VOTE FUNCTION (FIXED WITH RPC) ---
         async function vote(id) {
-            // 1. Zoek in normale lijst OF in daily lijst
+            // 1. Zoek de tekening (in normale lijst OF daily lijst)
             let drawing = STATE.drawings.find(d => d.id === id);
             if (!drawing) {
                 drawing = STATE.dailyDrawings.find(d => d.id === id);
@@ -1234,6 +1232,7 @@ dailyDrawings: [],
 
             if(!drawing) return;
 
+            // 2. Check of je al gestemd hebt
             if(STATE.myVotes.has(id)) {
                 showToast('You already voted for this!', 'error');
                 return;
@@ -1243,14 +1242,13 @@ dailyDrawings: [],
                 return;
             }
 
-            // Visuele update
+            // 3. OPTIMISTIC UI UPDATE (Direct op scherm tonen)
             drawing.votes++;
             STATE.myVotes.add(id);
-            saveData();
+            saveData(); // Lokaal opslaan
             
-            // UI Update: Check of het een daily is
+            // UI verversen zonder herladen
             if (drawing.is_daily) {
-                // Update knop in Daily Gallery zonder de hele lijst te herladen
                 const btn = document.querySelector(`#dailyGallery button[onclick*="vote(${id})"]`);
                 if(btn) {
                     btn.className = 'neu-btn';
@@ -1259,35 +1257,35 @@ dailyDrawings: [],
                     if(infoDiv) infoDiv.innerHTML = `❤️ ${drawing.votes} | Score: ${drawing.scores?.total || 0}%`;
                 }
             } else {
-                renderGallery(); // Normale galerij wel herladen
+                renderGallery(); 
             }
             
-            updateGlobalStats();
             showToast('Vote cast! ❤️', 'success');
+            updateGlobalStats();
 
-            // Database update
-            // --- VERVANG DIT STUK IN JE vote(id) FUNCTIE ---
-try {
-    // We halen eerst de huidige stand op om zeker te zijn (optioneel, maar veiliger)
-    const { data: currentData } = await client
-        .from('drawings')
-        .select('votes')
-        .eq('id', id)
-        .single();
-    
-    const newVotes = (currentData ? currentData.votes : drawing.votes) + 1;
+            // 4. DE DATABASE FIX
+            try {
+                // BELANGRIJK: We gebruiken nu exact de naam 'row_id' zoals in de SQL
+                const { error } = await client.rpc('increment_vote', { row_id: id });
 
-    // Voer de update uit
-    const { error } = await client
-        .from('drawings')
-        .update({ votes: newVotes })
-        .eq('id', id);
-
-    if (error) throw error;
-    
-} catch (err) {
-    // ... rest van je error handling (die de vote terugdraait)
-                console.error("Network Error:", err);
+                if (error) {
+                    console.error("Supabase Vote Error:", error);
+                    throw error; 
+                }
+            } catch (err) {
+                console.error("Vote failed, reverting UI", err);
+                // Als het mislukt, draaien we de wijziging terug
+                drawing.votes--;
+                STATE.myVotes.delete(id);
+                
+                // UI terugzetten
+                if(drawing.is_daily) {
+                     const btn = document.querySelector(`#dailyGallery button[onclick*="vote(${id})"]`);
+                     if(btn) { btn.className = 'neu-btn btn-green'; btn.innerText = '❤️ Vote'; }
+                } else {
+                    renderGallery(); 
+                }
+                showToast('Vote failed... check connection', 'error');
             }
         }
 
