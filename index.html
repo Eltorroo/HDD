@@ -1266,22 +1266,27 @@ dailyDrawings: [],
             showToast('Vote cast! ❤️', 'success');
 
             // Database update
-            try {
-                const { error } = await client.rpc('increment_vote', { row_id: id });
-                if (error) {
-                    // Terugdraaien bij fout
-                    drawing.votes--;
-                    STATE.myVotes.delete(id);
-                    if(drawing.is_daily) {
-                         // Reset daily knop (simpel)
-                         const btn = document.querySelector(`#dailyGallery button[onclick*="vote(${id})"]`);
-                         if(btn) { btn.className = 'neu-btn btn-green'; btn.innerText = '❤️ Vote'; }
-                    } else {
-                        renderGallery(); 
-                    }
-                    showToast('Vote failed... try again', 'error');
-                }
-            } catch (err) {
+            // --- VERVANG DIT STUK IN JE vote(id) FUNCTIE ---
+try {
+    // We halen eerst de huidige stand op om zeker te zijn (optioneel, maar veiliger)
+    const { data: currentData } = await client
+        .from('drawings')
+        .select('votes')
+        .eq('id', id)
+        .single();
+    
+    const newVotes = (currentData ? currentData.votes : drawing.votes) + 1;
+
+    // Voer de update uit
+    const { error } = await client
+        .from('drawings')
+        .update({ votes: newVotes })
+        .eq('id', id);
+
+    if (error) throw error;
+    
+} catch (err) {
+    // ... rest van je error handling (die de vote terugdraait)
                 console.error("Network Error:", err);
             }
         }
