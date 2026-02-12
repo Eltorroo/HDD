@@ -2336,23 +2336,19 @@ replay_data: d.replay_data || [],
             }).join('');
         }
 
-   // --- SMART CHAIN STATS (BURN + LIQUIDITY) ---
+  // --- SMART CHAIN STATS (LIVE BURN + MANUAL LOCKED) ---
         async function fetchChainStats() {
             const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
             const INITIAL_SUPPLY = 1_000_000_000; 
 
-            // HIER ZETTEN WE DEBEKENDE LOCKED WALLETS (Uit jouw console log)
-            // #1 is de grote pool, #2 is de 50M lock
-            const LOCKED_WALLETS = [
-                "8akKLDnqNtfoGKT491EDrczosj1bHC1uKvF7DNMeV4DN", 
-                "EQDDEvWLoMPn95MXCTzHvw8sNidfxWVGVAyQPXd6RM5x"
-            ];
+            // HIER STAAT JE VASTE TOTAAL (De optelsom van Jupiter)
+            // 50M + 15M + 10M + 10M + 9M + 8.2M + 8M + 3M = 113.262.402
+            const MANUAL_LOCKED_AMOUNT = 113262402;
 
-            // Widget aanzetten
             const widget = document.getElementById('statsWidget');
             if(widget) widget.style.display = 'block';
 
-            // Lijst met nodes (als er een faalt, pakt hij de volgende)
+            // Publieke nodes (als er een faalt, pakt hij de volgende)
             const RPC_ENDPOINTS = [
                 "https://solana-rpc.publicnode.com",
                 "https://rpc.ankr.com/solana",
@@ -2361,16 +2357,15 @@ replay_data: d.replay_data || [],
 
             for (const rpcUrl of RPC_ENDPOINTS) {
                 try {
-                    console.log("Connecting to chain via:", rpcUrl);
                     const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
                     const pubKey = new solanaWeb3.PublicKey(CA);
 
-                    // 1. HAAL BURN DATA OP
+                    // 1. BURN DATA (Dit doen we wel live)
                     const tokenSupply = await connection.getTokenSupply(pubKey);
-                    const currentSupply = tokenSupply.value.uiAmount; // Dit zou ~758M moeten zijn
+                    const currentSupply = tokenSupply.value.uiAmount; 
                     const burnedAmount = INITIAL_SUPPLY - currentSupply;
                     
-                    // Bereken % ten opzichte van start supply (1 Miljard)
+                    // Bereken Burn %
                     const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
 
                     // Update Burn UI
@@ -2378,41 +2373,20 @@ replay_data: d.replay_data || [],
                     document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
                     document.getElementById('burnTotalDisplay').textContent = `${Math.floor(burnedAmount).toLocaleString()} $HDD`;
 
-                    // 2. HAAL LIQUIDITY DATA OP (De Fix)
-                    const largestAccounts = await connection.getTokenLargestAccounts(pubKey);
-                    
-                    if(largestAccounts.value && largestAccounts.value.length > 0) {
-                        let totalLocked = 0;
+                    // 2. LOCKED DATA (Handmatig)
+                    // Bereken Locked % ten opzichte van de HUIDIGE (circulating) supply
+                    const lockedPercent = (MANUAL_LOCKED_AMOUNT / currentSupply) * 100;
 
-                        // We loopen door de top holders heen
-                        largestAccounts.value.forEach(acc => {
-                            // Als het adres in onze lijst met LOCKED_WALLETS staat, tellen we hem mee
-                            if (LOCKED_WALLETS.includes(acc.address.toString())) {
-                                totalLocked += acc.uiAmount;
-                            }
-                        });
+                    // Update Locked UI
+                    document.getElementById('liqPercentDisplay').textContent = `${lockedPercent.toFixed(1)}%`;
+                    document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
+                    document.getElementById('liqTotalDisplay').textContent = `${Math.floor(MANUAL_LOCKED_AMOUNT).toLocaleString()} $HDD`;
 
-                        // Als totalLocked 0 blijft (misschien zijn adressen veranderd?), pak dan toch maar #1 als fallback
-                        if (totalLocked === 0 && largestAccounts.value.length > 0) {
-                             totalLocked = largestAccounts.value[0].uiAmount;
-                        }
-
-                        // Bereken % ten opzichte van de HUIDIGE supply (Circulating)
-                        // Dit is gebruikelijker voor Liquidity stats. 
-                        // Wil je het t.o.v. 1 Miljard? Verander 'currentSupply' hieronder naar 'INITIAL_SUPPLY'.
-                        const lockedPercent = (totalLocked / currentSupply) * 100;
-
-                        // Update Liquidity UI
-                        document.getElementById('liqPercentDisplay').textContent = `${lockedPercent.toFixed(1)}%`;
-                        document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
-                        document.getElementById('liqTotalDisplay').textContent = `${Math.floor(totalLocked).toLocaleString()} $HDD`;
-                    }
-
-                    // Als we hier zijn, is alles gelukt. Stop de loop.
+                    // Klaar! Stop de loop.
                     break; 
 
                 } catch (err) {
-                    console.warn(`Node ${rpcUrl} failed, trying next...`, err);
+                    console.warn(`Node ${rpcUrl} failed, trying next...`);
                 }
             }
         }
