@@ -2485,14 +2485,12 @@ replay_data: d.replay_data || [],
             input.disabled = true;
             loading.style.display = 'block';
 
-            // --- DE MARKETING MASTER FORMULE ---
-            // 1. "Sticker style" & "High contrast" zorgt dat het van het scherm spat (goed voor socials)
-            // 2. "Thick chaotic lines" zorgt voor die herkenbare $HDD vibe
-            // 3. "Waxy oil pastel" zorgt voor de kleurdiepte
-            const styleInstructions = "naive children's crayon drawing, waxy oil pastel texture, rough scribbles, bold thick lines, bright primary colors, white paper background, high contrast, sticker art style, whimsical, expressive, masterpiece of a 5 year old";
+            // --- DE "HD MARKETING" STIJL ---
+            // Toegevoegd: "vector style", "sharp focus", "8k" voor extreme scherpte
+            // Behoudt wel de "crayon/sticker" look, maar dan kraakhelder.
+            const styleInstructions = "naive children's crayon drawing, waxy oil pastel texture, rough scribbles, bold thick lines, bright primary colors, white paper background, high contrast, sticker art style, vector style, sharp focus, 8k resolution, crisp edges, masterpiece";
 
-            // --- DE SAMENVOEGING ---
-            // Jouw tekst EERST (voor precisie), daarna de marketing-saus
+            // --- DE FORMULE ---
             const finalPrompt = encodeURIComponent(`${userText}, ${styleInstructions}`);
             
             // -------------------------
@@ -2500,8 +2498,9 @@ replay_data: d.replay_data || [],
             const seed = Math.floor(Math.random() * 1000000);
 
             // De URL (Pollinations.ai)
-            // We gebruiken flux model voor de beste prompt-volging
-            const imageUrl = `https://image.pollinations.ai/prompt/${finalPrompt}?width=600&height=450&seed=${seed}&nologo=true&model=flux`;
+            // UPDATE: We vragen nu width=1200 en height=900 (2x zo groot als je canvas)
+            // Dit zorgt voor veel scherpere lijnen bij het verkleinen.
+            const imageUrl = `https://image.pollinations.ai/prompt/${finalPrompt}?width=1200&height=900&seed=${seed}&nologo=true&model=flux&enhance=true`;
 
             const img = new Image();
             img.crossOrigin = "Anonymous";
@@ -2516,10 +2515,13 @@ replay_data: d.replay_data || [],
                 ctx.fillStyle = "#FFFFFF";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Tekenen
+                // Tekenen (De browser verschaalt de 1200px foto nu super scherp naar 600px)
+                // We gebruiken 'quality' smoothing
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // --- AI MODUS AAN (Beveiliging) ---
+                // --- AI MODUS AAN ---
                 STATE.isAI = true; 
                 
                 // Knoppen wisselen
@@ -2539,7 +2541,7 @@ replay_data: d.replay_data || [],
                 STATE.isDrawing = false;
                 saveHistory(); 
                 
-                showToast("Poof! Marketing Art generated 🖍️", "success");
+                showToast("Poof! HD Art generated 🖍️", "success");
             };
 
             img.onerror = () => {
