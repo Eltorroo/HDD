@@ -2341,6 +2341,13 @@ replay_data: d.replay_data || [],
             const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
             const INITIAL_SUPPLY = 1_000_000_000; 
 
+            // HIER ZETTEN WE DEBEKENDE LOCKED WALLETS (Uit jouw console log)
+            // #1 is de grote pool, #2 is de 50M lock
+            const LOCKED_WALLETS = [
+                "8akKLDnqNtfoGKT491EDrczosj1bHC1uKvF7DNMeV4DN", 
+                "EQDDEvWLoMPn95MXCTzHvw8sNidfxWVGVAyQPXd6RM5x"
+            ];
+
             // Widget aanzetten
             const widget = document.getElementById('statsWidget');
             if(widget) widget.style.display = 'block';
@@ -2358,31 +2365,47 @@ replay_data: d.replay_data || [],
                     const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
                     const pubKey = new solanaWeb3.PublicKey(CA);
 
-                    // 1. HAAL BURN DATA OP (Totale supply check)
+                    // 1. HAAL BURN DATA OP
                     const tokenSupply = await connection.getTokenSupply(pubKey);
-                    const currentSupply = tokenSupply.value.uiAmount;
+                    const currentSupply = tokenSupply.value.uiAmount; // Dit zou ~758M moeten zijn
                     const burnedAmount = INITIAL_SUPPLY - currentSupply;
+                    
+                    // Bereken % ten opzichte van start supply (1 Miljard)
                     const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
 
                     // Update Burn UI
-                    document.getElementById('burnPercentDisplay').textContent = `${burnedPercent.toFixed(2)}%`;
+                    document.getElementById('burnPercentDisplay').textContent = `${burnedPercent.toFixed(1)}%`;
                     document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
                     document.getElementById('burnTotalDisplay').textContent = `${Math.floor(burnedAmount).toLocaleString()} $HDD`;
 
-                    // 2. HAAL LIQUIDITY DATA OP (De "Slimme" Truc)
-                    // We vragen: "Geef mij de grootste houders van deze token"
+                    // 2. HAAL LIQUIDITY DATA OP (De Fix)
                     const largestAccounts = await connection.getTokenLargestAccounts(pubKey);
                     
                     if(largestAccounts.value && largestAccounts.value.length > 0) {
-                        // De grootste houder is vrijwel ALTIJD de Raydium Pool (of Bonding Curve)
-                        // Dit is de "Locked" liquidity waar mensen tegen handelen.
-                        const poolBalance = largestAccounts.value[0].uiAmount;
-                        const poolPercent = (poolBalance / INITIAL_SUPPLY) * 100;
+                        let totalLocked = 0;
+
+                        // We loopen door de top holders heen
+                        largestAccounts.value.forEach(acc => {
+                            // Als het adres in onze lijst met LOCKED_WALLETS staat, tellen we hem mee
+                            if (LOCKED_WALLETS.includes(acc.address.toString())) {
+                                totalLocked += acc.uiAmount;
+                            }
+                        });
+
+                        // Als totalLocked 0 blijft (misschien zijn adressen veranderd?), pak dan toch maar #1 als fallback
+                        if (totalLocked === 0 && largestAccounts.value.length > 0) {
+                             totalLocked = largestAccounts.value[0].uiAmount;
+                        }
+
+                        // Bereken % ten opzichte van de HUIDIGE supply (Circulating)
+                        // Dit is gebruikelijker voor Liquidity stats. 
+                        // Wil je het t.o.v. 1 Miljard? Verander 'currentSupply' hieronder naar 'INITIAL_SUPPLY'.
+                        const lockedPercent = (totalLocked / currentSupply) * 100;
 
                         // Update Liquidity UI
-                        document.getElementById('liqPercentDisplay').textContent = `${poolPercent.toFixed(2)}%`;
-                        document.getElementById('liqProgressBar').style.width = `${poolPercent}%`;
-                        document.getElementById('liqTotalDisplay').textContent = `${Math.floor(poolBalance).toLocaleString()} $HDD`;
+                        document.getElementById('liqPercentDisplay').textContent = `${lockedPercent.toFixed(1)}%`;
+                        document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
+                        document.getElementById('liqTotalDisplay').textContent = `${Math.floor(totalLocked).toLocaleString()} $HDD`;
                     }
 
                     // Als we hier zijn, is alles gelukt. Stop de loop.
@@ -2390,7 +2413,6 @@ replay_data: d.replay_data || [],
 
                 } catch (err) {
                     console.warn(`Node ${rpcUrl} failed, trying next...`, err);
-                    // Hij probeert automatisch de volgende in de lijst
                 }
             }
         }
