@@ -313,6 +313,35 @@
         /* --- CHART --- */
         #dexscreener-embed { position: relative; width: 100%; height: 600px; border: var(--border); border-radius: var(--radius); overflow: hidden; }
         #dexscreener-embed iframe { position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: 0; }
+
+/* --- AI LOADER STYLES --- */
+        .pencil-loader {
+            position: relative;
+            width: 100px;
+            height: 50px;
+            margin: 0 auto;
+        }
+
+        .pencil-icon {
+            font-size: 3rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: write 0.8s infinite alternate;
+        }
+
+        @keyframes write {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -5px) rotate(-10deg); }
+            50% { transform: translate(40px, 0) rotate(0deg); }
+            75% { transform: translate(60px, -5px) rotate(10deg); }
+            100% { transform: translate(80px, 0) rotate(0deg); }
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
     </style>
 </head>
 <body>
@@ -372,10 +401,11 @@
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="activateTab('draw')">✏️ Draw</button>
             <button class="nav-tab" onclick="activateTab('gallery')">🖼️ Gallery</button>
-<button class="nav-tab" onclick="activateTab('daily')">📅 Daily</button>
+            <button class="nav-tab" onclick="activateTab('daily')">📅 Daily</button>
             <button class="nav-tab" onclick="activateTab('stats')">📊 Stats</button>
-            <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">🏆 Tournament</button>
+            <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">🏆 Tourney</button>
             <button class="nav-tab" onclick="activateTab('chart')">📈 Chart</button>
+            <button class="nav-tab" onclick="activateTab('ai-dawgs')">🤖 AI Dawgs</button>
         </div>
 
         <div class="tab-content-wrapper">
@@ -447,10 +477,19 @@
                     <option value="adventure">🧗 Mountain Adventure</option>
                 </select>
 
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="artistName" class="form-control" placeholder="2. Artist Name" maxlength="30" style="margin-bottom: 0;">
-                    <button id="btnSubmit" class="neu-btn btn-green" style="font-weight: 700;">PUBLISH</button>
-                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <input type="text" id="artistName" class="form-control" placeholder="2. Artist Name" maxlength="30" style="margin-bottom: 0; flex-grow: 1;">
+
+    <button id="btnSubmit" class="neu-btn btn-green" style="font-weight: 700;">PUBLISH</button>
+
+    <button id="btnDownloadOnly" class="neu-btn btn-blue" style="font-weight: 700; display:none; flex-grow: 1;" onclick="downloadCurrentCanvas()">
+        💾 SAVE IMAGE
+    </button>
+
+    <button id="btnResetAI" class="neu-btn btn-red" style="font-weight: 700; display:none; background:#EF4444; color:white; flex-grow: 1;" onclick="document.getElementById('btnClear').click()">
+        🗑️ CLEAR & DRAW
+    </button>
+</div>
             </div>
 
            <div id="gallery" class="tab-pane">
@@ -553,8 +592,32 @@
                  </div>
             </div>
 
-        </div> 
-    </div> 
+            <div id="ai-dawgs" class="tab-pane">
+                <div class="neu-box" style="text-align:center; background: #E0E7FF; border-color: #4338ca;">
+                    <h2 style="margin-bottom:15px;">🤖 AI GENERATOR</h2>
+                    <p style="margin-bottom:20px;">Describe a scenario and let the AI Dawg sketch it for you.</p>
+
+                    <input type="text" id="aiPromptInput" class="form-control" 
+                           placeholder="e.g. A rich dog on a yacht smoking a cigar..." 
+                           style="font-size: 1.1rem; padding: 15px; text-align:center; border: 3px solid #4338ca;">
+
+                    <br><br>
+
+                    <button class="neu-btn btn-blue" onclick="generateAIDawg()" 
+                            style="font-size: 1.2rem; padding: 15px 30px; border-width: 3px; box-shadow: 6px 6px 0px #1e1b4b;">
+                        WHO LET THE DOGS DRAW? 🐕
+                    </button>
+                    
+                    <div id="aiLoading" style="display:none; margin-top:30px;">
+                        <div class="pencil-loader">
+                            <div class="pencil-icon">✏️</div>
+                        </div>
+                        <p style="font-weight:bold; margin-top:10px; animation: blink 1s infinite;">The Dawg is sketching...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div> </div>
     
     <div id="toast"></div>
 
@@ -791,9 +854,8 @@
             }, 1000);
         }        // --- UI HELPER: TABS ---
         window.activateTab = function(tabId) {
-            // Reset Daily Mode als we weggaan uit draw, of geforceerd switchen
+            // Reset Daily Mode
             if (tabId !== 'draw' && STATE.isDailyChallenge) {
-                // Reset UI
                 document.getElementById('drawTitle').textContent = "Create Masterpiece";
                 document.getElementById('drawingPromptBanner').style.display = 'none';
                 document.getElementById('bgSelect').disabled = false;
@@ -809,31 +871,32 @@
             
             const buttons = document.querySelectorAll('.nav-tab');
             let btnIndex = 0;
-            // Aangepaste indexen omdat Daily erbij is gekomen (index 2)
-            if(tabId === 'gallery') btnIndex = 1;
+            
+            // Dit moet matchen met de volgorde van de HTML knoppen hierboven!
+            if(tabId === 'draw') btnIndex = 0;
+            else if(tabId === 'gallery') btnIndex = 1;
             else if(tabId === 'daily') btnIndex = 2;
             else if(tabId === 'stats' || tabId === 'leaderboard') btnIndex = 3;
             else if(tabId === 'tournament') btnIndex = 4;
             else if(tabId === 'chart') btnIndex = 5;
+            else if(tabId === 'ai-dawgs') btnIndex = 6; 
             
             if(buttons[btnIndex]) buttons[btnIndex].classList.add('active');
 
-            // 2. Content verbergen
+            // 2. Content verbergen & Tonen
             document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
             
-            // 3. Juiste content tonen
             let targetId = tabId;
             if(tabId === 'leaderboard') targetId = 'stats';
             
             const target = document.getElementById(targetId);
             if(target) target.classList.add('active');
 
-            // 4. Trigger rendering
+            // 3. Render functies
             if(tabId === 'gallery') renderGallery();
             if(tabId === 'stats') { renderLeaderboard(); renderAccuracy(); }
             if(tabId === 'tournament') loadTournamentHallOfFame();
         };
-
         // --- BACKEND LOGIC (Supabase & Drawing) ---
         const SUPABASE_URL = "https://vxfzjzsshwxrqherfmfh.supabase.co";
         const SUPABASE_KEY = "sb_publishable_GOuAPSxNwfuzU1lxVxi4Dw_qN7kY-Xz"; 
@@ -1980,32 +2043,45 @@ function renderGallery() {
        document.getElementById('btnUndo').onclick = undo;
 
       // Hier begint de Prullenbak code
-       document.getElementById('btnClear').onclick = () => { 
-            // 1. Reset de beveiliging
-            STATE.isReplaying = false;
-            
-            // NIEUW: Verberg de snelheidsknoppen direct
-            document.getElementById('replayControls').style.display = 'none';
+       // Hier begint de Prullenbak code
+      document.getElementById('btnClear').onclick = () => { 
+    // 1. Reset de beveiliging en AI status
+    STATE.isReplaying = false;
+    STATE.isAI = false; 
 
-            const submitBtn = document.getElementById('btnSubmit');
-            
-            
-            // We checken even of de knop bestaat om errors te voorkomen
-            if(submitBtn) {
-                submitBtn.disabled = false; // Knop weer aan
-                submitBtn.textContent = 'PUBLISH'; // Tekst terug
-                submitBtn.style.opacity = '1';
-            }
-            canvas.style.pointerEvents = 'auto'; // Je mag weer tekenen
+    // UI Resetten (Verberg replay knoppen)
+    document.getElementById('replayControls').style.display = 'none';
 
-            // 2. Wis het canvas (MAAK HET TRANSPARANT)
-            // De regels met 'fillStyle' en 'fillRect' zijn hier weggehaald!
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 3. Reset history en recording
-            saveHistory(); 
-            STATE.recording = [];
-        };
+    // 2. KNOPPEN RESETTEN (Dit is nieuw)
+    // Zet de normale Publish knop terug
+    document.getElementById('btnSubmit').style.display = 'block'; 
+    // Verberg de AI knoppen
+    document.getElementById('btnDownloadOnly').style.display = 'none'; 
+    document.getElementById('btnResetAI').style.display = 'none'; 
+
+    // Maak het naamveld weer actief
+    const artistInput = document.getElementById('artistName');
+    artistInput.disabled = false; 
+    if(artistInput.value === "AI Generated Art") artistInput.value = "";
+
+    // Reset de Publish knop tekst
+    const submitBtn = document.getElementById('btnSubmit');
+    if(submitBtn) {
+        submitBtn.disabled = false; 
+        submitBtn.textContent = 'PUBLISH'; 
+        submitBtn.style.opacity = '1';
+    }
+
+    // Je mag weer tekenen
+    canvas.style.pointerEvents = 'auto'; 
+
+    // 3. Wis het canvas echt
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 4. Sla dit lege canvas op in de geschiedenis
+    saveHistory(); 
+    STATE.recording = [];
+};
         const tools = { btnPen: 'pen', btnBrush: 'brush', btnCalligraphy: 'calligraphy', btnEraser: 'eraser', btnFill: 'fill' };
         Object.keys(tools).forEach(id => {
             const el = document.getElementById(id);
@@ -2393,6 +2469,120 @@ replay_data: d.replay_data || [],
         
         // Start direct bij laden
         fetchChainStats();
+// --- AI DAWGS GENERATOR ---
+      async function generateAIDawg() {
+            const input = document.getElementById('aiPromptInput');
+            const loading = document.getElementById('aiLoading');
+            let userText = input.value.trim();
+
+            if (!userText) {
+                showToast("Woof! You need to type something first!", "error");
+                return;
+            }
+
+            // UI Aanzetten
+            input.disabled = true;
+            loading.style.display = 'block';
+
+            // --- DE MARKETING MASTER FORMULE ---
+            // 1. "Sticker style" & "High contrast" zorgt dat het van het scherm spat (goed voor socials)
+            // 2. "Thick chaotic lines" zorgt voor die herkenbare $HDD vibe
+            // 3. "Waxy oil pastel" zorgt voor de kleurdiepte
+            const styleInstructions = "naive children's crayon drawing, waxy oil pastel texture, rough scribbles, bold thick lines, bright primary colors, white paper background, high contrast, sticker art style, whimsical, expressive, masterpiece of a 5 year old";
+
+            // --- DE SAMENVOEGING ---
+            // Jouw tekst EERST (voor precisie), daarna de marketing-saus
+            const finalPrompt = encodeURIComponent(`${userText}, ${styleInstructions}`);
+            
+            // -------------------------
+
+            const seed = Math.floor(Math.random() * 1000000);
+
+            // De URL (Pollinations.ai)
+            // We gebruiken flux model voor de beste prompt-volging
+            const imageUrl = `https://image.pollinations.ai/prompt/${finalPrompt}?width=600&height=450&seed=${seed}&nologo=true&model=flux`;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = imageUrl;
+
+            img.onload = () => {
+                // HET POEF MOMENT
+                activateTab('draw'); 
+
+                // Canvas resetten en wit maken
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Tekenen
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // --- AI MODUS AAN (Beveiliging) ---
+                STATE.isAI = true; 
+                
+                // Knoppen wisselen
+                document.getElementById('btnSubmit').style.display = 'none'; 
+                document.getElementById('btnDownloadOnly').style.display = 'block'; 
+                document.getElementById('btnResetAI').style.display = 'block'; 
+                
+                // Blokkeer naam
+                document.getElementById('artistName').disabled = true; 
+                document.getElementById('artistName').value = "AI Generated Art";
+
+                // Reset UI
+                loading.style.display = 'none';
+                input.disabled = false;
+                input.value = ""; 
+
+                STATE.isDrawing = false;
+                saveHistory(); 
+                
+                showToast("Poof! Marketing Art generated 🖍️", "success");
+            };
+
+            img.onerror = () => {
+                loading.style.display = 'none';
+                input.disabled = false;
+                showToast("The AI Dawg is sleeping (Error). Try again!", "error");
+            };
+        }
+
+
+
+// --- NIEUWE DOWNLOAD FUNCTIE ---
+function downloadCurrentCanvas() {
+    // 1. Maak een tijdelijk canvas
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tCtx = tempCanvas.getContext('2d');
+
+    // 2. Vul de achtergrond (wit of plaatje)
+    if (STATE.currentBgImage) {
+        const img = STATE.currentBgImage;
+        const scale = Math.max(tempCanvas.width / img.width, tempCanvas.height / img.height);
+        const x = (tempCanvas.width / 2) - (img.width / 2) * scale;
+        const y = (tempCanvas.height / 2) - (img.height / 2) * scale;
+        tCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+    } else {
+        tCtx.fillStyle = '#FFFFFF';
+        tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    }
+
+    // 3. Teken jouw kunstwerk eroverheen
+    tCtx.drawImage(canvas, 0, 0);
+
+    // 4. Start de download
+    const link = document.createElement('a');
+    link.download = 'ai-dawg-masterpiece.png';
+    link.href = tempCanvas.toDataURL();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast("Saved to your photos! 📸", "success");
+}
 
     </script>
 </body>
