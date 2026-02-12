@@ -405,7 +405,7 @@
             <button class="nav-tab" onclick="activateTab('stats')">📊 Stats</button>
             <button class="nav-tab tournament-tab" onclick="activateTab('tournament')">🏆 Tourney</button>
             <button class="nav-tab" onclick="activateTab('chart')">📈 Chart</button>
-            <button class="nav-tab" onclick="activateTab('ai-dawgs')">🤖 AI Dawgs</button>
+          <button class="nav-tab" onclick="activateTab('ai-dawgs')">🤖 Robo-Pup</button>
         </div>
 
         <div class="tab-content-wrapper">
@@ -593,31 +593,32 @@
             </div>
 
             <div id="ai-dawgs" class="tab-pane">
-                <div class="neu-box" style="text-align:center; background: #E0E7FF; border-color: #4338ca;">
-                    <h2 style="margin-bottom:15px;">🤖 AI GENERATOR</h2>
-                    <p style="margin-bottom:20px;">Describe a scenario and let the AI Dawg sketch it for you.</p>
+                <div class="neu-box" style="text-align:center; background: #FCD34D; border: 3px solid black; box-shadow: 6px 6px 0px black;">
+                    
+                    <div style="font-size: 4rem; margin-bottom: -10px;">💤</div>
+                    <h2 style="font-family: 'Fredoka', sans-serif; font-size: 2.5rem; text-transform: uppercase; margin-bottom: 5px; text-shadow: 2px 2px 0px white;">
+                        THE ROBO-PUP
+                    </h2>
+                    <p style="font-weight: bold; margin-bottom: 25px; font-size: 1.1rem;">
+                        The dawg is sleeping... what is he dreaming about?
+                    </p>
 
                     <input type="text" id="aiPromptInput" class="form-control" 
-                           placeholder="e.g. A rich dog on a yacht smoking a cigar..." 
-                           style="font-size: 1.1rem; padding: 15px; text-align:center; border: 3px solid #4338ca;">
+                           placeholder="e.g. A rich dog driving a lambo..." 
+                           style="font-size: 1.2rem; padding: 15px; text-align:center; border: 3px solid black; box-shadow: 3px 3px 0px rgba(0,0,0,0.1); border-radius: 12px;">
 
                     <br><br>
 
-                    <button class="neu-btn btn-blue" onclick="generateAIDawg()" 
-                            style="font-size: 1.2rem; padding: 15px 30px; border-width: 3px; box-shadow: 6px 6px 0px #1e1b4b;">
-                        WHO LET THE DOGS DRAW? 🐕
+                    <button class="neu-btn" onclick="generateAIDawg()" 
+                            style="background: white; color: black; font-size: 1.4rem; padding: 15px 40px; border: 3px solid black; box-shadow: 6px 6px 0px black; transform: rotate(-1deg);">
+                        🦴 FETCH DREAM
                     </button>
                     
                     <div id="aiLoading" style="display:none; margin-top:30px;">
                         <div class="pencil-loader">
-                            <div class="pencil-icon">✏️</div>
+                            <div class="pencil-icon" style="font-size: 4rem;">🖍️</div>
                         </div>
-                        <p style="font-weight:bold; margin-top:10px; animation: blink 1s infinite;">The Dawg is sketching...</p>
-                    </div>
-                </div>
-            </div>
-
-        </div> </div>
+                        <p style="font-weight:bold; margin-top:15px; font-family: monospace; font-size: 1.2
     
     <div id="toast"></div>
 
