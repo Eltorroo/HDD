@@ -2418,14 +2418,25 @@ replay_data: d.replay_data || [],
             const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
             const INITIAL_SUPPLY = 1_000_000_000; 
 
-            // HIER STAAT JE VASTE TOTAAL (De optelsom van Jupiter)
-            // 50M + 15M + 10M + 10M + 9M + 8.2M + 8M + 3M = 113.262.402
-            const MANUAL_LOCKED_AMOUNT = 113262402;
+            // AANGEPAST: Het exacte aantal locked tokens
+            const MANUAL_LOCKED_AMOUNT = 148_572_999;
 
             const widget = document.getElementById('statsWidget');
             if(widget) widget.style.display = 'block';
 
-            // Publieke nodes (als er een faalt, pakt hij de volgende)
+            // STAP 0: Haal de LIVE prijs op via DexScreener
+            let priceUsd = 0;
+            try {
+                const priceRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${CA}`);
+                const priceJson = await priceRes.json();
+                if(priceJson.pairs && priceJson.pairs.length > 0) {
+                    priceUsd = parseFloat(priceJson.pairs[0].priceUsd);
+                }
+            } catch(e) { 
+                console.log("Price fetch failed", e); 
+            }
+
+            // Publieke nodes
             const RPC_ENDPOINTS = [
                 "https://solana-rpc.publicnode.com",
                 "https://rpc.ankr.com/solana",
@@ -2437,37 +2448,60 @@ replay_data: d.replay_data || [],
                     const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
                     const pubKey = new solanaWeb3.PublicKey(CA);
 
-                    // 1. BURN DATA (Dit doen we wel live)
+                    // 1. DATA OPHALEN
                     const tokenSupply = await connection.getTokenSupply(pubKey);
+                    
+                    // currentSupply = Wat er NU nog bestaat (dus Initial - Burned)
                     const currentSupply = tokenSupply.value.uiAmount; 
+                    
+                    // burnedAmount = Wat er weg is
                     const burnedAmount = INITIAL_SUPPLY - currentSupply;
                     
-                    // Bereken Burn %
+                    // Bereken Burn % (Ten opzichte van start)
                     const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
 
-                    // Update Burn UI
+                    // BEREKEN DE WAARDE IN USD
+                    const burnValueUsd = burnedAmount * priceUsd;
+                    
+                    // Format naar dollars (geen decimalen voor duidelijkheid)
+                    const formattedValue = burnValueUsd.toLocaleString('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    });
+
+                    // Update Burn UI - GROTER EN DUIDELIJKER
                     document.getElementById('burnPercentDisplay').textContent = `${burnedPercent.toFixed(1)}%`;
                     document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
-                    document.getElementById('burnTotalDisplay').textContent = `${Math.floor(burnedAmount).toLocaleString()} $HDD`;
+                    
+                    document.getElementById('burnTotalDisplay').innerHTML = `
+                        <div style="font-size: 0.85rem; margin-bottom: 4px;">${Math.floor(burnedAmount).toLocaleString()} $HDD Gone</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: #DC2626; text-transform: uppercase; letter-spacing: 0.5px; border-top: 2px solid #eee; padding-top: 4px; margin-top: 4px;">
+                            TOTAL VALUE: ${formattedValue}
+                        </div>
+                    `;
 
-                    // 2. LOCKED DATA (Handmatig)
-                    // Bereken Locked % ten opzichte van de HUIDIGE (circulating) supply
+                    // 2. LOCKED DATA
+                    // Berekening: (Locked Amount / Huidige Supply) * 100
+                    // Dit houdt dus rekening met het feit dat de supply kleiner is geworden door de burn.
                     const lockedPercent = (MANUAL_LOCKED_AMOUNT / currentSupply) * 100;
 
                     // Update Locked UI
                     document.getElementById('liqPercentDisplay').textContent = `${lockedPercent.toFixed(1)}%`;
                     document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
-                    document.getElementById('liqTotalDisplay').textContent = `${Math.floor(MANUAL_LOCKED_AMOUNT).toLocaleString()} $HDD`;
+                    document.getElementById('liqTotalDisplay').innerHTML = `
+                         <span style="font-size: 0.9rem; font-weight: bold;">${Math.floor(MANUAL_LOCKED_AMOUNT).toLocaleString()} $HDD</span>
+                         <span style="display:block; font-size: 0.7rem; opacity: 0.8;">(of current supply)</span>
+                    `;
 
-                    // Klaar! Stop de loop.
-                    break; 
+                    break; // Stop loop als het gelukt is
 
                 } catch (err) {
                     console.warn(`Node ${rpcUrl} failed, trying next...`);
                 }
             }
         }
-        
         // Start direct bij laden
         fetchChainStats();
 // --- AI DAWGS GENERATOR ---
