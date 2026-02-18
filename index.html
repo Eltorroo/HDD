@@ -342,6 +342,66 @@
             50% { opacity: 0.5; }
         }
 
+
+/* --- NIEUWE HARMONISCHE STATS --- */
+.stats-wrapper {
+    width: 100%;
+    max-width: 90%;
+    margin: 10px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Ruimte tussen de twee balken */
+}
+
+.stat-row {
+    background: rgba(255,255,255,0.6);
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.progress-track {
+    width: 100%;
+    height: 10px;
+    background: white;
+    border: 2px solid black;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-right: 2px solid black;
+    transition: width 1s ease-out;
+}
+
+.stat-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: monospace;
+    font-size: 0.7rem;
+}
+
+.stat-badge {
+    background: white;
+    border: 1px solid black;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+
     </style>
 </head>
 <body>
@@ -371,32 +431,41 @@
                 </a>
             </div>
 
-            <div id="statsWidget" style="width:100%; max-width: 90%; margin: 10px auto 0; padding: 10px; background: rgba(255,255,255,0.5); border: 2px solid black; border-radius: 6px; display:none;">
-                
-                <div style="margin-bottom: 12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; font-weight:bold; font-size:0.75rem;">
-                        <span>🔥TOKENS BURNED (Gone)</span>
-                        <span id="burnPercentDisplay">Loading...</span>
-                    </div>
-                    <div style="width:100%; height:8px; background:white; border:1px solid black; border-radius:4px; overflow:hidden;">
-                        <div id="burnProgressBar" style="width:0%; height:100%; background: #EF4444; transition: width 1s ease-out;"></div>
-                    </div>
-                    <div id="burnTotalDisplay" style="text-align:right; font-size:0.65rem; font-family:monospace; opacity:0.7;">checking chain...</div>
-                </div>
-
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; font-weight:bold; font-size:0.75rem;">
-                        <span> 🔒TOKENS LOCKED  </span>
-                        <span id="liqPercentDisplay">Loading...</span>
-                    </div>
-                    <div style="width:100%; height:8px; background:white; border:1px solid black; border-radius:4px; overflow:hidden;">
-                        <div id="liqProgressBar" style="width:0%; height:100%; background: #3B82F6; transition: width 1s ease-out;"></div>
-                    </div>
-                    <div id="liqTotalDisplay" style="text-align:right; font-size:0.65rem; font-family:monospace; opacity:0.7;">checking chain...</div>
-                </div>
-
-            </div>
+            <div id="statsWidget" class="stats-wrapper" style="display:none;">
+    
+    <div class="stat-row">
+        <div class="stat-header">
+            <span>🔥 Burned</span>
+            <span id="burnPercentDisplay">0%</span>
         </div>
+        
+        <div class="progress-track">
+            <div id="burnProgressBar" class="progress-fill" style="width:0%; background: #EF4444;"></div>
+        </div>
+
+        <div class="stat-footer">
+            <span id="burnTotalDisplay">Loading...</span>
+            <span id="burnValueDisplay" class="stat-badge" style="background:#FEE2E2; color:#991B1B;">$0</span>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat-header">
+            <span>🔒 Locked</span>
+            <span id="liqPercentDisplay">0%</span>
+        </div>
+        
+        <div class="progress-track">
+            <div id="liqProgressBar" class="progress-fill" style="width:0%; background: #3B82F6;"></div>
+        </div>
+
+        <div class="stat-footer">
+            <span id="liqTotalDisplay">Loading...</span>
+            <span id="liqInfoDisplay" class="stat-badge" style="background:#DBEAFE; color:#1E40AF;">Vested</span>
+        </div>
+    </div>
+
+</div>
 
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="activateTab('draw')">✏️ Draw</button>
@@ -2415,93 +2484,72 @@ replay_data: d.replay_data || [],
 
   // --- SMART CHAIN STATS (LIVE BURN + MANUAL LOCKED) ---
         async function fetchChainStats() {
-            const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
-            const INITIAL_SUPPLY = 1_000_000_000; 
+    const CA = "6ZKCEQPT7hULSD4iU9j4UXUA5gDbtuNLM93sXQx6BAGS";
+    const INITIAL_SUPPLY = 1_000_000_000; 
+    const MANUAL_LOCKED_AMOUNT = 148_572_999;
 
-            // AANGEPAST: Het exacte aantal locked tokens
-            const MANUAL_LOCKED_AMOUNT = 148_572_999;
+    const widget = document.getElementById('statsWidget');
+    if(widget) widget.style.display = 'flex'; // Belangrijk: flex voor de nieuwe layout
 
-            const widget = document.getElementById('statsWidget');
-            if(widget) widget.style.display = 'block';
-
-            // STAP 0: Haal de LIVE prijs op via DexScreener
-            let priceUsd = 0;
-            try {
-                const priceRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${CA}`);
-                const priceJson = await priceRes.json();
-                if(priceJson.pairs && priceJson.pairs.length > 0) {
-                    priceUsd = parseFloat(priceJson.pairs[0].priceUsd);
-                }
-            } catch(e) { 
-                console.log("Price fetch failed", e); 
-            }
-
-            // Publieke nodes
-            const RPC_ENDPOINTS = [
-                "https://solana-rpc.publicnode.com",
-                "https://rpc.ankr.com/solana",
-                "https://api.mainnet-beta.solana.com"
-            ];
-
-            for (const rpcUrl of RPC_ENDPOINTS) {
-                try {
-                    const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
-                    const pubKey = new solanaWeb3.PublicKey(CA);
-
-                    // 1. DATA OPHALEN
-                    const tokenSupply = await connection.getTokenSupply(pubKey);
-                    
-                    // currentSupply = Wat er NU nog bestaat (dus Initial - Burned)
-                    const currentSupply = tokenSupply.value.uiAmount; 
-                    
-                    // burnedAmount = Wat er weg is
-                    const burnedAmount = INITIAL_SUPPLY - currentSupply;
-                    
-                    // Bereken Burn % (Ten opzichte van start)
-                    const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
-
-                    // BEREKEN DE WAARDE IN USD
-                    const burnValueUsd = burnedAmount * priceUsd;
-                    
-                    // Format naar dollars (geen decimalen voor duidelijkheid)
-                    const formattedValue = burnValueUsd.toLocaleString('en-US', { 
-                        style: 'currency', 
-                        currency: 'USD',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0
-                    });
-
-                    // Update Burn UI - GROTER EN DUIDELIJKER
-                    document.getElementById('burnPercentDisplay').textContent = `${burnedPercent.toFixed(1)}%`;
-                    document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
-                    
-                    document.getElementById('burnTotalDisplay').innerHTML = `
-                        <div style="font-size: 0.85rem; margin-bottom: 4px;">${Math.floor(burnedAmount).toLocaleString()} $HDD Gone</div>
-                        <div style="font-size: 1.2rem; font-weight: 900; color: #DC2626; text-transform: uppercase; letter-spacing: 0.5px; border-top: 2px solid #eee; padding-top: 4px; margin-top: 4px;">
-                            TOTAL VALUE: ${formattedValue}
-                        </div>
-                    `;
-
-                    // 2. LOCKED DATA
-                    // Berekening: (Locked Amount / Huidige Supply) * 100
-                    // Dit houdt dus rekening met het feit dat de supply kleiner is geworden door de burn.
-                    const lockedPercent = (MANUAL_LOCKED_AMOUNT / currentSupply) * 100;
-
-                    // Update Locked UI
-                    document.getElementById('liqPercentDisplay').textContent = `${lockedPercent.toFixed(1)}%`;
-                    document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
-                    document.getElementById('liqTotalDisplay').innerHTML = `
-                         <span style="font-size: 0.9rem; font-weight: bold;">${Math.floor(MANUAL_LOCKED_AMOUNT).toLocaleString()} $HDD</span>
-                         <span style="display:block; font-size: 0.7rem; opacity: 0.8;">(of current supply)</span>
-                    `;
-
-                    break; // Stop loop als het gelukt is
-
-                } catch (err) {
-                    console.warn(`Node ${rpcUrl} failed, trying next...`);
-                }
-            }
+    // 1. Prijs ophalen
+    let priceUsd = 0;
+    try {
+        const priceRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${CA}`);
+        const priceJson = await priceRes.json();
+        if(priceJson.pairs && priceJson.pairs.length > 0) {
+            priceUsd = parseFloat(priceJson.pairs[0].priceUsd);
         }
+    } catch(e) { console.log("Price fetch failed", e); }
+
+    // 2. Supply ophalen via RPC
+    const RPC_ENDPOINTS = [
+        "https://solana-rpc.publicnode.com",
+        "https://rpc.ankr.com/solana",
+        "https://api.mainnet-beta.solana.com"
+    ];
+
+    for (const rpcUrl of RPC_ENDPOINTS) {
+        try {
+            const connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
+            const pubKey = new solanaWeb3.PublicKey(CA);
+            const tokenSupply = await connection.getTokenSupply(pubKey);
+            
+            const currentSupply = tokenSupply.value.uiAmount; 
+            const burnedAmount = INITIAL_SUPPLY - currentSupply;
+            
+            // Berekeningen
+            const burnedPercent = (burnedAmount / INITIAL_SUPPLY) * 100;
+            const burnValueUsd = burnedAmount * priceUsd;
+            const lockedPercent = (MANUAL_LOCKED_AMOUNT / currentSupply) * 100;
+
+            // --- UPDATE DE UI (Alleen tekst, geen HTML injectie) ---
+            
+            // Burn Rij
+            document.getElementById('burnPercentDisplay').innerText = `${burnedPercent.toFixed(1)}%`;
+            document.getElementById('burnProgressBar').style.width = `${burnedPercent}%`;
+            document.getElementById('burnTotalDisplay').innerText = `${Math.floor(burnedAmount).toLocaleString()} Gone`;
+            
+            // Dollar Waarde (Mooi geformatteerd)
+            document.getElementById('burnValueDisplay').innerText = burnValueUsd.toLocaleString('en-US', { 
+                style: 'currency', 
+                currency: 'USD', 
+                maximumFractionDigits: 0 
+            });
+
+            // Locked Rij
+            document.getElementById('liqPercentDisplay').innerText = `${lockedPercent.toFixed(1)}%`;
+            document.getElementById('liqProgressBar').style.width = `${lockedPercent}%`;
+            document.getElementById('liqTotalDisplay').innerText = `${Math.floor(MANUAL_LOCKED_AMOUNT).toLocaleString()} Locked`;
+            // De tekst 'Vested' staat al in de HTML, dus die hoeven we niet aan te passen, 
+            // tenzij je daar ook een waarde wilt (bijv waarde in USD).
+
+            break; // Stop loop als het gelukt is
+
+        } catch (err) {
+            console.warn(`Node ${rpcUrl} failed, trying next...`);
+        }
+    }
+}
         // Start direct bij laden
         fetchChainStats();
 // --- AI DAWGS GENERATOR ---
